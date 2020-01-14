@@ -9,11 +9,13 @@
 #include <arch.h>
 #include <arch_helpers.h>
 #include <common/debug.h>
+#include <common/runtime_svc.h>
 #include <lib/mmio.h>
 #include <lib/psci/psci.h>
 
 #include <gpc.h>
 #include <imx8m_psci.h>
+#include <imx_sip_svc.h>
 #include <plat_imx8.h>
 
 static uint32_t gpc_imr_offset[] = { IMR1_CORE0_A53, IMR1_CORE1_A53, IMR1_CORE2_A53, IMR1_CORE3_A53, };
@@ -249,4 +251,48 @@ void imx_clear_rbc_count(void)
 {
 	mmio_clrbits_32(IMX_GPC_BASE + SLPCR, SLPCR_RBC_EN |
 		(0x3f << SLPCR_RBC_COUNT_SHIFT));
+}
+
+int imx_src_handler(uint32_t smc_fid, u_register_t x1, u_register_t x2,
+		    u_register_t x3, void *handle)
+{
+	uint32_t val;
+
+	switch (x1) {
+#if defined(PLAT_imx8mm) || defined(PLAT_imx8mq)
+	case IMX_SIP_SRC_M4_START:
+		val = mmio_read_32(IMX_SRC_BASE + SRC_M4RCR);
+		val &= ~SRC_SCR_M4C_NON_SCLR_RST_MASK;
+		val |= SRC_SCR_M4_ENABLE_MASK;
+		mmio_write_32(IMX_SRC_BASE + SRC_M4RCR, val);
+		break;
+	case IMX_SIP_SRC_M4_STARTED:
+		val = mmio_read_32(IMX_SRC_BASE + SRC_M4RCR);
+		return !(val & SRC_SCR_M4C_NON_SCLR_RST_MASK);
+	case IMX_SIP_SRC_SET_SECONDARY_BOOT:
+		if (x2 != 0U) {
+			mmio_setbits_32(IMX_SRC_BASE + SRC_GPR10_OFFSET,
+					SRC_GPR10_PERSIST_SECONDARY_BOOT);
+		} else {
+			mmio_clrbits_32(IMX_SRC_BASE + SRC_GPR10_OFFSET,
+					SRC_GPR10_PERSIST_SECONDARY_BOOT);
+		}
+		break;
+	case IMX_SIP_SRC_IS_SECONDARY_BOOT:
+		val = mmio_read_32(IMX_SRC_BASE + SRC_GPR10_OFFSET);
+		return !!(val & SRC_GPR10_PERSIST_SECONDARY_BOOT);
+#else
+	case IMX_SIP_SRC_M4_START:
+		mmio_clrbits_32(IMX_IOMUX_GPR_BASE + 0x58, 0x1);
+		break;
+	case IMX_SIP_SRC_M4_STARTED:
+		val = mmio_read_32(IMX_IOMUX_GPR_BASE + 0x58);
+		return !(val & 0x1);
+#endif
+	default:
+		return SMC_UNK;
+
+	};
+
+	return 0;
 }
