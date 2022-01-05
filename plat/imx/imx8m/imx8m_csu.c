@@ -54,3 +54,17 @@ void imx_csu_init(const struct imx_csu_cfg *csu_cfg)
 		csu++;
 	}
 }
+
+void imx_csu_secure_peripherals(void)
+{
+	uint32_t val;
+	uint32_t reg;
+
+	reg = CSU_SA_REG(0x0); // resolves to IMX_CSU_BASE + 0x218
+	val = CSU_SA_ALL_NONSECURE;
+	mmio_write_32(reg, val);
+
+	val = CSU_SA_LOCK_NONSECURE;
+	mmio_write_32(reg, val);
+
+};

@@ -35,6 +35,9 @@
 #define CSU_SA_LOCK(x)		((0x1 << (((x) % 16) * 2 + 1)))
 #define CSU_SA_CFG(x, n)	((x) << (((n) % 16) * 2))
 
+#define CSU_SA_ALL_NONSECURE	0x55555554
+#define CSU_SA_LOCK_NONSECURE	0xfffffffc
+
 #define CSU_HPCONTROL_REG(x)		(IMX_CSU_BASE + (((x) / 16) * 4) + 0x358)
 #define CSU_HPCONTROL_LOCK(x)		((0x1 << (((x) % 16) * 2 + 1)))
 #define CSU_HPCONTROL_CFG(x, n)		((x) << (((n) % 16) * 2))
@@ -70,5 +73,7 @@ struct imx_csu_cfg {
 	{CSU_HPCONTROL, .idx = (i), .hpctrl = (val), .lock = (lk), }
 
 void imx_csu_init(const struct imx_csu_cfg *csu_cfg);
+
+void imx_csu_secure_peripherals(void);
 
 #endif /* IMX_CSU_H */
