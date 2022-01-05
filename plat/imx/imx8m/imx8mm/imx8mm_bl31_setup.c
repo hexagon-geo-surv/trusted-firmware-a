@@ -149,6 +149,8 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 
 	imx_csu_init(csu_cfg);
 
+	imx_csu_secure_peripherals();
+
 	if (console_base == 0U) {
 		console_base = imx8m_uart_get_base();
 	}
