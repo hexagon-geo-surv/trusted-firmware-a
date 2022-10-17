@@ -156,37 +156,6 @@ int imx_misc_set_temp_handler(uint32_t smc_fid,
 
 #endif /* defined(PLAT_imx8qm) || defined(PLAT_imx8qx) */
 
-#if defined(PLAT_imx8mm) || defined(PLAT_imx8mq)
-int imx_src_handler(uint32_t smc_fid,
-		    u_register_t x1,
-		    u_register_t x2,
-		    u_register_t x3,
-		    void *handle)
-{
-	uint32_t val;
-
-	switch (x1) {
-	case IMX_SIP_SRC_SET_SECONDARY_BOOT:
-		if (x2 != 0U) {
-			mmio_setbits_32(IMX_SRC_BASE + SRC_GPR10_OFFSET,
-					SRC_GPR10_PERSIST_SECONDARY_BOOT);
-		} else {
-			mmio_clrbits_32(IMX_SRC_BASE + SRC_GPR10_OFFSET,
-					SRC_GPR10_PERSIST_SECONDARY_BOOT);
-		}
-		break;
-	case IMX_SIP_SRC_IS_SECONDARY_BOOT:
-		val = mmio_read_32(IMX_SRC_BASE + SRC_GPR10_OFFSET);
-		return !!(val & SRC_GPR10_PERSIST_SECONDARY_BOOT);
-	default:
-		return SMC_UNK;
-
-	};
-
-	return 0;
-}
-#endif /* defined(PLAT_imx8mm) || defined(PLAT_imx8mq) */
-
 #if defined(PLAT_imx8mn) || defined(PLAT_imx8mp)
 static bool is_secondary_boot(void)
 {
@@ -236,26 +205,66 @@ static bool is_secondary_boot(void)
 
 	return is_secondary;
 }
+#endif /* defined(PLAT_imx8mn) || defined(PLAT_imx8mp) */
 
+#if defined(PLAT_imx8mm) || defined(PLAT_imx8mn) || defined(PLAT_imx8mp) || defined(PLAT_imx8mq)
 int imx_src_handler(uint32_t smc_fid,
 		    u_register_t x1,
 		    u_register_t x2,
 		    u_register_t x3,
 		    void *handle)
 {
+	uint32_t val;
+
 	switch (x1) {
+#if defined(PLAT_imx8mm) || defined(PLAT_imx8mq)
+	case IMX_SIP_SRC_SET_SECONDARY_BOOT:
+		if (x2 != 0U) {
+			mmio_setbits_32(IMX_SRC_BASE + SRC_GPR10_OFFSET,
+					SRC_GPR10_PERSIST_SECONDARY_BOOT);
+		} else {
+			mmio_clrbits_32(IMX_SRC_BASE + SRC_GPR10_OFFSET,
+					SRC_GPR10_PERSIST_SECONDARY_BOOT);
+		}
+		break;
+	case IMX_SIP_SRC_IS_SECONDARY_BOOT:
+		val = mmio_read_32(IMX_SRC_BASE + SRC_GPR10_OFFSET);
+		return !!(val & SRC_GPR10_PERSIST_SECONDARY_BOOT);
+#endif /* defined(PLAT_imx8mm) || defined(PLAT_imx8mq) */
+#if defined(PLAT_imx8mn) || defined(PLAT_imx8mp)
 	case IMX_SIP_SRC_SET_SECONDARY_BOOT:
 		/* we do support that on these SoCs */
 		break;
 	case IMX_SIP_SRC_IS_SECONDARY_BOOT:
 		return is_secondary_boot();
+#endif /* defined(PLAT_imx8mn) || defined(PLAT_imx8mp) */
+#if defined(PLAT_imx8mm)
+	case IMX_SIP_SRC_START_M_CORE:
+		val = mmio_read_32(IMX_SRC_BASE + SRC_M4RCR_OFFSET);
+		val &= ~SRC_SW_M4C_NON_SCLR_RST;
+		val |= SRC_ENABLE_M4;
+		mmio_write_32(IMX_SRC_BASE + SRC_M4RCR_OFFSET, val);
+		break;
+	case IMX_SIP_SRC_IS_M_CORE_STARTED:
+		val = mmio_read_32(IMX_SRC_BASE + SRC_M4RCR_OFFSET);
+		return !(val & SRC_SW_M4C_NON_SCLR_RST);
+#endif /* defined(PLAT_imx8mm) */
+#if defined(PLAT_imx8mn) || defined(PLAT_imx8mp)
+	case IMX_SIP_SRC_START_M_CORE:
+		mmio_clrbits_32(IMX_IOMUX_GPR_BASE + IOMUXC_GPR22, GPR_M7_CPUWAIT);
+		break;
+	case IMX_SIP_SRC_IS_M_CORE_STARTED:
+		val = mmio_read_32(IMX_IOMUX_GPR_BASE + IOMUXC_GPR22);
+		return !(val & GPR_M7_CPUWAIT);
+#endif /* defined(PLAT_imx8mn) || defined(PLAT_imx8mp) */
 	default:
 		return SMC_UNK;
+
 	};
 
 	return 0;
 }
-#endif /* defined(PLAT_imx8mn) || defined(PLAT_imx8mp) */
+#endif /* defined(PLAT_imx8mm) || defined(PLAT_imx8mn) || defined(PLAT_imx8mp) || defined(PLAT_imx8mq) */
 
 static uint64_t imx_get_commit_hash(u_register_t x2,
 		    u_register_t x3,
