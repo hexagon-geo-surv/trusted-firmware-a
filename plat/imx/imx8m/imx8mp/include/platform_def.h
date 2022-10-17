@@ -142,9 +142,13 @@
 
 #define SRC_A53RCR0			U(0x4)
 #define SRC_A53RCR1			U(0x8)
+#define SRC_M7RCR_OFFSET		U(0xC)
 #define SRC_OTG1PHY_SCR			U(0x20)
 #define SRC_OTG2PHY_SCR			U(0x24)
 #define SRC_GPR1_OFFSET			U(0x74)
+
+#define SRC_ENABLE_M7			BIT(3)
+#define SRC_SW_M7C_NON_SCLR_RST	BIT(0)
 
 #define SNVS_LPCR			U(0x38)
 #define SNVS_LPCR_SRTC_ENV		BIT(0)
@@ -154,6 +158,9 @@
 #define IOMUXC_GPR10			U(0x28)
 #define GPR_TZASC_EN			BIT(0)
 #define GPR_TZASC_EN_LOCK		BIT(16)
+
+#define IOMUXC_GPR22			U(0x58)
+#define GPR_M7_CPUWAIT			BIT(0)
 
 #define ANAMIX_MISC_CTL			U(0x124)
 #define DRAM_PLL_CTRL			(IMX_ANAMIX_BASE + 0x50)
