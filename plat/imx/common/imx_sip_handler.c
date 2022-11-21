@@ -16,6 +16,9 @@
 #include <lib/el3_runtime/context_mgmt.h>
 #include <lib/mmio.h>
 #include <sci/sci.h>
+#include <drivers/delay_timer.h>
+#include <lib/libc/errno.h>
+#include <gpc_reg.h>
 
 #if defined(PLAT_imx8qm) || defined(PLAT_imx8qx)
 
@@ -154,6 +157,10 @@ int imx_src_handler(uint32_t smc_fid,
 		    void *handle)
 {
 	uint32_t val;
+#if defined(PLAT_imx8mn) || defined(PLAT_imx8mp)
+	uint64_t timeout;
+	int ret = 0;
+#endif
 
 	switch (x1) {
 #if defined(PLAT_imx8mm) || defined(PLAT_imx8mq)
@@ -188,6 +195,49 @@ int imx_src_handler(uint32_t smc_fid,
 	case IMX_SIP_SRC_IS_M_CORE_STARTED:
 		val = mmio_read_32(IMX_IOMUX_GPR_BASE + IOMUXC_GPR22);
 		return !(val & GPR_M7_CPUWAIT);
+	case IMX_SIP_SRC_STOP_M_CORE:
+		/*
+		 * Safe stop
+		 *    If M4 already in WFI,  perform below steps.
+		 * a)	Set [0x303A_002C].0=0   [ request SLEEPHOLDREQn ]
+		 * b)	Wait  [0x303A_00EC].1 = 0  [ wait SLEEPHOLDACKn ]
+		 * c)	Set  GPR.CPUWAIT=1
+		 * d)	Set [0x303A_002C].0=1  [ de-assert SLEEPHOLDREQn ]
+		 * e)	Set SRC_M7_RCR[3:0] = 0xE0   [ reset M7 core/plat ]
+		 * f)	Wait SRC_M7_RCR[3:0] = 0x8
+		 * The following steps move to start part.
+		 * g/h is actually no needed here.
+		 * g)	Init TCM or DDR
+		 * h)	Set GPR.INITVTOR
+		 * i)	Set GPR.CPUWAIT=0,  M7 starting running
+		 */
+		val = mmio_read_32(IMX_GPC_BASE + LPS_CPU1);
+		/* Not in stop/wait mode */
+		if (!(val & (M7_STOPED | M7_WAITING))) {
+			mmio_clrbits_32(IMX_GPC_BASE + GPC_MISC, M7_SLEEP_HOLD_REQ_B);
+
+			timeout = timeout_init_us(10000);
+			while ((mmio_read_32(IMX_GPC_BASE + LPS_CPU1) & M7_SLEEP_HOLD_ACK_B)) {
+				if (timeout_elapsed(timeout)) {
+					ret = -ETIMEDOUT;
+					break;
+				}
+			}
+		}
+		SMC_SET_GP(handle, CTX_GPREG_X1, ret);
+		mmio_setbits_32(IMX_IOMUX_GPR_BASE + IOMUXC_GPR22, GPR_M7_CPUWAIT);
+		mmio_setbits_32(IMX_GPC_BASE + GPC_MISC, M7_SLEEP_HOLD_REQ_B);
+		mmio_setbits_32(IMX_SRC_BASE + SRC_M7RCR_OFFSET, SRC_ENABLE_M7 | SW_M7C_RST);
+		timeout = timeout_init_us(10000);
+		ret = 0;
+		while ((mmio_read_32(IMX_SRC_BASE + SRC_M7RCR_OFFSET) & 0x0F) != SRC_ENABLE_M7) {
+			if (timeout_elapsed(timeout)) {
+				ret = -ETIMEDOUT;
+				break;
+			}
+		}
+		SMC_SET_GP(handle, CTX_GPREG_X2, ret);
+		break;
 #endif /* defined(PLAT_imx8mn) || defined(PLAT_imx8mp) */
 	default:
 		return SMC_UNK;
