@@ -122,6 +122,7 @@
 #define SRC_GPR1_OFFSET			U(0x74)
 
 #define SRC_ENABLE_M7			BIT(3)
+#define SW_M7C_RST			BIT(1)
 #define SRC_SW_M7C_NON_SCLR_RST	BIT(0)
 
 #define SNVS_LPCR			U(0x38)
