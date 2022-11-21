@@ -15,6 +15,7 @@
 #define MST_CPU_MAPPING			0x18
 #define MLPCR				0x20
 #define PGC_ACK_SEL_A53			0x24
+#define GPC_MISC			0X2c
 #define IMR1_CORE0_A53			0x30
 #define IMR1_CORE1_A53			0x44
 #define IMR1_CORE2_A53			0x194
@@ -35,6 +36,10 @@
 #define PLAT_PGC_PCR			0x900
 #define NOC_PGC_PCR			0xa40
 #define PGC_SCU_TIMING			0x910
+
+#define M7_STOPED			BIT(25)
+#define M7_WAITING			BIT(24)
+#define M7_SLEEP_HOLD_ACK_B		BIT(1)
 
 #define MASK_DSM_TRIGGER_A53		BIT(31)
 #define IRQ_SRC_A53_WUP			BIT(30)
@@ -62,6 +67,8 @@
 #define SLPCR_BYPASS_PMIC_READY		BIT(0)
 #define SLPCR_RBC_COUNT_SHIFT		24
 #define SLPCR_STBY_COUNT_SHFT		3
+
+#define M7_SLEEP_HOLD_REQ_B		BIT(0)
 
 #define A53_DUMMY_PDN_ACK		BIT(30)
 #define A53_DUMMY_PUP_ACK		BIT(31)
