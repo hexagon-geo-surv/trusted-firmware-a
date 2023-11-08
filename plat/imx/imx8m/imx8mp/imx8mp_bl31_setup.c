@@ -136,6 +136,8 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 
 	imx_csu_init(csu_cfg);
 
+	imx_csu_secure_peripherals();
+
 	/* config the ocram memory range for secure access */
 	mmio_write_32(IMX_IOMUX_GPR_BASE + 0x2c, 0x4E1);
 	val = mmio_read_32(IMX_IOMUX_GPR_BASE + 0x2c);
