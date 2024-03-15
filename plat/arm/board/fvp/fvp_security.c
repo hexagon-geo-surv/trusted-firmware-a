@@ -7,6 +7,7 @@
 #include <plat/arm/common/arm_config.h>
 #include <plat/arm/common/plat_arm.h>
 #include <platform_def.h>
+#include <arch_features.h>
 
 /*
  * We assume that all security programming is done by the primary core.

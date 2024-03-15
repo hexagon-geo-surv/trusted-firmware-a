@@ -410,6 +410,10 @@
 #define ID_AA64MMFR3_EL1_D128_MASK		ULL(0xf)
 #define D128_IMPLEMENTED			ULL(0x1)
 
+#define ID_AA64MMFR3_EL1_MEC_SHIFT		U(28)
+#define ID_AA64MMFR3_EL1_MEC_MASK		ULL(0xf)
+#define MEC_IMPLEMENTED				ULL(0x1)
+
 #define ID_AA64MMFR3_EL1_S2POE_SHIFT		U(20)
 #define ID_AA64MMFR3_EL1_S2POE_MASK		ULL(0xf)
 
@@ -521,6 +525,13 @@
 			(U(1) << 22) | (U(1) << 18) | (U(1) << 16) | \
 			(U(1) << 11) | (U(1) << 5) | (U(1) << 4))
 
+#define SCTLR2_EL2   	S3_4_C1_C0_3
+#define SCTLR2_EL3   	S3_6_C1_C0_3
+
+#define SCTLR2_EMEC_BIT		(ULL(1) << 1)
+#define TCR2_EL2_AMEC0		(ULL(1) << 12)
+#define TCR2_EL2_AMEC1		(ULL(1) << 13)
+
 #define SCTLR_M_BIT		(ULL(1) << 0)
 #define SCTLR_A_BIT		(ULL(1) << 1)
 #define SCTLR_C_BIT		(ULL(1) << 2)
@@ -615,6 +626,7 @@
 #define SCR_FGTEN2_BIT		(UL(1) << 59)
 #define SCR_NSE_BIT		(ULL(1) << SCR_NSE_SHIFT)
 #define SCR_EnFPM_BIT		(ULL(1) << 50)
+#define SCR_MECEn_BIT		(UL(1) << 49)
 #define SCR_GPF_BIT		(UL(1) << 48)
 #define SCR_D128En_BIT		(UL(1) << 47)
 #define SCR_TWEDEL_SHIFT	U(30)
@@ -1574,5 +1586,13 @@
 #define CLUSTERPMCR_E_BIT		BIT(0)
 #define CLUSTERPMCR_N_SHIFT		U(11)
 #define CLUSTERPMCR_N_MASK		U(0x1f)
+
+/* RME MECID Registers */
+#define MECID_P0_EL2			S3_4_C10_C8_0
+#define MECID_P1_EL2			S3_4_C10_C8_2
+#define MECIDR_EL2			S3_4_C10_C8_7
+#define MECID_RL_A_EL3			S3_6_C10_C10_1
+
+#define MECIDR_MECIDWIDTHM1_MASK	UINT64_C(0xf)
 
 #endif /* ARCH_H */

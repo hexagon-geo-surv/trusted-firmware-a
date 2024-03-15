@@ -394,6 +394,7 @@ void __dead2 smc(uint64_t x0, uint64_t x1, uint64_t x2, uint64_t x3,
 /*******************************************************************************
  * System register accessor prototypes
  ******************************************************************************/
+
 DEFINE_IDREG_READ_FUNC(midr_el1)
 DEFINE_SYSREG_READ_FUNC(mpidr_el1)
 DEFINE_IDREG_READ_FUNC(id_aa64mmfr0_el1)
@@ -696,6 +697,7 @@ DEFINE_RENAME_SYSREG_RW_FUNCS(rcwsmask_el1, RCWSMASK_EL1)
 /* FEAT_SCTLR2 Registers */
 DEFINE_RENAME_SYSREG_RW_FUNCS(sctlr2_el1, SCTLR2_EL1)
 DEFINE_RENAME_SYSREG_RW_FUNCS(sctlr2_el2, SCTLR2_EL2)
+DEFINE_RENAME_SYSREG_RW_FUNCS(sctlr2_el3, SCTLR2_EL3)
 
 /* FEAT_LS64_ACCDATA Registers */
 DEFINE_RENAME_SYSREG_RW_FUNCS(accdata_el1, ACCDATA_EL1)
@@ -720,6 +722,12 @@ DEFINE_RENAME_SYSREG_RW_FUNCS(gptbr_el3, GPTBR_EL3)
 DEFINE_RENAME_SYSREG_RW_FUNCS(gpccr_el3, GPCCR_EL3)
 
 DEFINE_RENAME_SYSREG_RW_FUNCS(fpmr, FPMR)
+
+/* RME MEC Registers */
+DEFINE_RENAME_SYSREG_RW_FUNCS(mecid_el3, MECID_RL_A_EL3)
+DEFINE_RENAME_SYSREG_RW_FUNCS(mecid_p0_el2, MECID_P0_EL2)
+DEFINE_RENAME_SYSREG_RW_FUNCS(mecid_p1_el2, MECID_P1_EL2)
+DEFINE_RENAME_SYSREG_READ_FUNC(mecidr_el2, MECIDR_EL2)
 
 #define IS_IN_EL(x) \
 	(GET_EL(read_CurrentEl()) == MODE_EL##x)

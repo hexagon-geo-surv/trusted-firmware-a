@@ -420,6 +420,9 @@ ENABLE_BRBE_FOR_NS			?=	0
 # Flag to enable Floating point exception Mode Register Feature (FEAT_FPMR)
 ENABLE_FEAT_FPMR			?=	0
 
+# Memory encryption extension to RME
+ENABLE_FEAT_MEC				?=	0
+
 #----
 # 9.3
 #----

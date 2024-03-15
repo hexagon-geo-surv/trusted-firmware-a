@@ -610,6 +610,9 @@ ifeq (${ENABLE_RME},1)
 
 	# RME enables CSV2_2 extension by default.
 	ENABLE_FEAT_CSV2_2 = 1
+
+	# RME uses MEC when available
+	ENABLE_FEAT_MEC = 2
 endif #(FEAT_RME)
 
 ################################################################################
@@ -1302,6 +1305,7 @@ $(eval $(call assert_numerics,\
 	ENABLE_FEAT_S1POE \
 	ENABLE_FEAT_SCTLR2 \
 	ENABLE_FEAT_D128 \
+	ENABLE_FEAT_MEC \
 	ENABLE_FEAT_GCS \
 	ENABLE_FEAT_VHE \
 	ENABLE_FEAT_MPAM \
@@ -1465,6 +1469,7 @@ $(eval $(call add_defines,\
 	ENABLE_FEAT_S1POE \
 	ENABLE_FEAT_SCTLR2 \
 	ENABLE_FEAT_D128 \
+	ENABLE_FEAT_MEC \
 	ENABLE_FEAT_GCS \
 	ENABLE_FEAT_MOPS \
 	ENABLE_FEAT_MTE2 \

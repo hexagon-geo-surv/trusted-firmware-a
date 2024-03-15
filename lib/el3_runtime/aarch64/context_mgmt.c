@@ -138,6 +138,10 @@ static void setup_secure_context(cpu_context_t *ctx, const struct entry_point_in
 		scr_el3 |= SCR_ATA_BIT;
 	}
 
+	if (is_feat_mec_supported()) {
+		scr_el3 |= SCR_MECEn_BIT;
+		scr_el3 |= SCR_SCTLR2En_BIT;
+	}
 	write_ctx_reg(state, CTX_SCR_EL3, scr_el3);
 
 	/*
@@ -190,6 +194,10 @@ static void setup_realm_context(cpu_context_t *ctx, const struct entry_point_inf
 		scr_el3 |= SCR_SCTLR2En_BIT;
 	}
 
+	if (is_feat_mec_supported()) {
+		scr_el3 |= SCR_MECEn_BIT;
+		scr_el3 |= SCR_SCTLR2En_BIT;
+	}
 	write_ctx_reg(state, CTX_SCR_EL3, scr_el3);
 }
 #endif /* ENABLE_RME */
@@ -660,6 +668,17 @@ void cm_manage_extensions_el3(void)
 	}
 
 	pmuv3_init_el3();
+
+	if (is_feat_mec_supported()) {
+		u_register_t sctlr2_el3 = read_sctlr2_el3();
+
+		/* Use default MECID 0 for RMM code and data */
+		write_mecid_el3(0);
+
+		sctlr2_el3 |= SCTLR2_EMEC_BIT;
+		write_sctlr2_el3(sctlr2_el3);
+		isb();
+	}
 }
 #endif /* IMAGE_BL31 */
 
