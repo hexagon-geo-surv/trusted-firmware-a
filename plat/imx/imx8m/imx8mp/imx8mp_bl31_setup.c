@@ -56,6 +56,23 @@ static const struct imx_rdc_cfg rdc[] = {
 	RDC_PDAPn(RDC_PDAP_UART2, D0R | D0W),
 	RDC_PDAPn(RDC_PDAP_UART1, D0R | D0W),
 
+	RDC_PDAPn(RDC_PDAP_RDC, D0R | D0W | D1R),
+
+	RDC_PDAPn(RDC_PDAP_eCSPI1, D1R | D1W),
+	RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
+
+	/*
+	 * Assignment the following to M7 only once the EVK is phased out.
+	 *
+	 * eCSPI2 on the EVK for the microchip,mpf-spi-fpga-mgr.
+	 * GPIO1 on EVK must be accessible from A52
+	 * UART3 on EVK is free, but maybe there are
+	 * some fumo setups may still use it,
+	 */
+	RDC_PDAPn(RDC_PDAP_eCSPI2, D0R | D0W | D1R | D1W),
+	RDC_PDAPn(RDC_PDAP_GPIO1, D0R | D0W | D1R | D1W),
+	RDC_PDAPn(RDC_PDAP_UART3, D0R | D0W | D1R | D1W),
+
 	/* memory region */
 
 	/* Sentinel */
