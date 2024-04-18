@@ -55,6 +55,21 @@ static const struct imx_rdc_cfg rdc[] = {
 	/* peripherals domain permission */
 	RDC_PDAPn(RDC_PDAP_UART2, D0R | D0W),
 	RDC_PDAPn(RDC_PDAP_UART1, D0R | D0W),
+	RDC_PDAPn(RDC_PDAP_eCSPI1, D1R | D1W),
+
+	RDC_PDAPn(RDC_PDAP_RDC, D0R | D0W | D1R),
+
+	/*
+	 * Assign following peripherals to both until debix-som/EVK phased out.
+	 *
+	 * eCSPI2 on the EVK for the microchip,mpf-spi-fpga-mgr, to M7 on proto
+	 * GPIO1 on EVK and debix-som for PMIC interrupt, to M7 on proto
+	 * UART3/4 assigned to cortex-A53 on debix-som, to M7 on proto
+	 */
+	RDC_PDAPn(RDC_PDAP_eCSPI2, D0R | D0W | D1R | D1W),
+	RDC_PDAPn(RDC_PDAP_GPIO1,  D0R | D0W | D1R | D1W),
+	RDC_PDAPn(RDC_PDAP_UART3,  D0R | D0W | D1R | D1W),
+	RDC_PDAPn(RDC_PDAP_UART4,  D0R | D0W | D1R | D1W),
 
 	/* memory region */
 
