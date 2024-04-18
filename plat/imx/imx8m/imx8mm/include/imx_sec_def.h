@@ -42,6 +42,7 @@ enum rdc_mda_idx {
 
 /* RDC Peripherals index */
 enum rdc_pdap_idx {
+	RDC_PDAP_GPIO1 = 0,
 	RDC_PDAP_GPIO2 = 1,
 	RDC_PDAP_GPIO3 = 2,
 	RDC_PDAP_GPIO4 = 3,
