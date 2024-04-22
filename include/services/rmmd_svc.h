@@ -161,6 +161,9 @@
 #define RMM_EL3_TOKEN_SIGN_PULL_RESP_OP         U(2)
 #define RMM_EL3_TOKEN_SIGN_GET_RAK_PUB_OP       U(3)
 
+#define RMM_ALLOCATE_MEC_KEY			SMC64_RMMD_EL3_FID(U(6))
+#define RMM_RELEASE_MEC_KEY			SMC64_RMMD_EL3_FID(U(7))
+
 /* ECC Curve types for attest key generation */
 #define ATTEST_KEY_CURVE_ECC_SECP384R1		U(0)
 

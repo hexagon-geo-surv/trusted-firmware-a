@@ -521,6 +521,10 @@ uint64_t rmmd_rmm_el3_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2,
 		VERBOSE("RMMD: running rmmd_rmm_sync_exit\n");
 		rmmd_rmm_sync_exit(x1);
 
+	case RMM_ALLOCATE_MEC_KEY:
+		SMC_RET0(handle);
+	case RMM_RELEASE_MEC_KEY:
+		SMC_RET0(handle);
 	default:
 		WARN("RMMD: Unsupported RMM-EL3 call 0x%08x\n", smc_fid);
 		SMC_RET1(handle, SMC_UNK);
