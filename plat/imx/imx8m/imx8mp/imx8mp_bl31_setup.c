@@ -224,9 +224,7 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 					    &bl33_image_ep_info);
 	}
 
-#if !defined(SPD_opteed) && !defined(SPD_trusty)
 	enable_snvs_privileged_access();
-#endif
 
 	bl31_tzc380_setup();
 }
