@@ -52,7 +52,7 @@ are explained below:
   - ``RES0``: Bit 31 of the version number is reserved 0 as to maintain
     consistency with the versioning schemes used in other parts of RMM.
 
-This document specifies the 0.5 version of Boot Interface ABI and RMM-EL3
+This document specifies the 0.6 version of Boot Interface ABI and RMM-EL3
 services specification and the 0.5 version of the Boot Manifest.
 
 .. _rmm_el3_boot_interface:
@@ -261,6 +261,8 @@ implemented by EL3 Firmware.
    0xC40001B3,``RMM_ATTEST_GET_PLAT_TOKEN``
    0xC40001B4,``RMM_EL3_FEATURES``
    0xC40001B5,``RMM_EL3_TOKEN_SIGN``
+   0xC40001B6,``RMM_MECID_KEY_UPDATE``
+   0xC40001B7,``RMM_ALLOCATE_MEMORY``
 
 RMM_RMI_REQ_COMPLETE command
 ============================
@@ -718,6 +720,62 @@ a failure. The errors are ordered by condition check.
    ``E_RMM_UNK``,"An unknown error occurred whilst processing the command or the SMC is not present if interface version is <0.5"
    ``E_RMM_OK``,No errors detected
 
+
+RMM_ALLOCATE_MEMORY command
+===========================
+
+This command is used to allocate memory for the RMM, during RMM boot time.
+This is not a fully featured dynamic memory allocator, since allocations cannot
+be freed again, and they must happen during the boot state of RMM.
+However it allows to size data structures in RMM based on runtime decisions,
+for instance depending on the number of cores or the amount of memory installed.
+
+FID
+---
+
+``0xC40001B7``
+
+Input values
+------------
+
+.. csv-table:: Input values for RMM_ALLOCATE_MEMORY
+   :header: "Name", "Register", "Field", "Type", "Description"
+   :widths: 1 1 1 1 5
+
+   fid,x0,[63:0],UInt64,Command FID
+   size,x1,[63:0],Size,"required size of the memory region, in bytes"
+   args,x2,[31:24],UInt64,"alignment requirement, in bits. A value of 16 would return a 64 KB aligned base address."
+   args,x2,[15:0],UInt64,"region identifier. An initial call with a certain ID
+   would return newly allocated memory, but subsequent calls would return the
+   pointer to this previously allocated memory region. An ID value of 0 will
+   always return newly allocated memory."
+
+Output values
+-------------
+
+.. csv-table:: Output values for RMM_ALLOCATE_MEMORY
+   :header: "Name", "Register", "Field", "Type", "Description"
+   :widths: 1 1 1 1 5
+
+   Result,x0,[63:0],Error Code,Command return status.
+   address,x1,[63:0],Address, "Physical address of the allocated memory area."
+
+
+Failure conditions
+------------------
+
+The table below shows all the possible error codes returned in ``Result`` upon
+a failure. The errors are ordered by condition check.
+
+.. csv-table:: Failure conditions for RMM_ALLOCATE_MEMORY
+   :header: "ID", "Condition"
+   :widths: 1 5
+
+   ``E_RMM_INVAL``,"region ID field too big"
+   ``E_RMM_UNK``,"if the SMC is not present, if interface version is <0.5"
+   ``E_RMM_NOMEM``,"size of region is larger than previously requested one,
+                   or requested size is larger than available memory"
+   ``E_RMM_OK``,No errors detected
 
 RMM-EL3 world switch register save restore convention
 _____________________________________________________

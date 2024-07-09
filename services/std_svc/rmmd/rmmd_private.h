@@ -54,6 +54,9 @@ int rmmd_attest_get_signing_key(uint64_t buf_pa, uint64_t *buf_size,
 uint64_t rmmd_el3_token_sign(void *handle, uint64_t x1, uint64_t x2,
 				    uint64_t x3, uint64_t x4);
 
+/* Memory allocation for RMM */
+int rmmd_allocate_memory(size_t size, uint64_t *identifier);
+
 /* Assembly helpers */
 uint64_t rmmd_rmm_enter(uint64_t *c_rt_ctx);
 void __dead2 rmmd_rmm_exit(uint64_t c_rt_ctx, uint64_t ret);

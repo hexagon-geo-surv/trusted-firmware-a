@@ -180,6 +180,19 @@
 #define EL3_TOKEN_SIGN_HASH_ALG_SHA384		U(1)
 
 /*
+ * Allocate memory for the RMM.
+ * The arguments to this SMC are :
+ *    arg0 - Function ID.
+ *    arg1 - Size of memory to be allocated (in bytes).
+ *    arg2 - Identifier of the type of memory to allocate, 0 for generic.
+ * The return arguments are :
+ *    ret0 - Status / error.
+ *    ret1 - Physical address of the allocated memory area.
+ */
+					/* 0x1B7 */
+#define RMM_ALLOCATE_MEMORY		SMC64_RMMD_EL3_FID(U(7))
+
+/*
  * RMM_BOOT_COMPLETE originates on RMM when the boot finishes (either cold
  * or warm boot). This is handled by the RMM-EL3 interface SMC handler.
  *
@@ -200,7 +213,7 @@
  * Increase this when a bug is fixed, or a feature is added without
  * breaking compatibility.
  */
-#define RMM_EL3_IFC_VERSION_MINOR	(U(5))
+#define RMM_EL3_IFC_VERSION_MINOR	(U(6))
 
 #define RMM_EL3_INTERFACE_VERSION				\
 	(((RMM_EL3_IFC_VERSION_MAJOR << 16) & 0x7FFFF) |	\
