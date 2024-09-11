@@ -1099,6 +1099,10 @@ ifeq ($(DICE_PROTECTION_ENVIRONMENT),1)
         $(info DICE_PROTECTION_ENVIRONMENT is an experimental feature)
 endif
 
+ifeq (${LFA_SUPPORT},1)
+        $(warning LFA_SUPPORT is an experimental feature)
+endif #(LFA_SUPPORT)
+
 ################################################################################
 # Process platform overrideable behaviour
 ################################################################################
@@ -1298,6 +1302,7 @@ $(eval $(call assert_booleans,\
 	EARLY_CONSOLE \
 	PRESERVE_DSU_PMU_REGS \
 	HOB_LIST \
+	LFA_SUPPORT \
 )))
 
 # Numeric_Flags
@@ -1524,6 +1529,7 @@ $(eval $(call add_defines,\
 	EARLY_CONSOLE \
 	PRESERVE_DSU_PMU_REGS \
 	HOB_LIST \
+	LFA_SUPPORT \
 )))
 
 ifeq (${PLATFORM_REPORT_CTX_MEM_USE}, 1)

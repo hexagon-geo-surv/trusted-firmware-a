@@ -767,7 +767,10 @@ subsections:
       - title: ChromeOS
         scope: cros
 
-      - title: Secure Payload Dispatcher
+      - title: Live Firmware Activation
+        scope: lfa
+
+- title: Secure Payload Dispatcher
         scope: spd
 
         subsections:

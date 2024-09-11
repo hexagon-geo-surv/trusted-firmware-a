@@ -432,3 +432,6 @@ PRESERVE_DSU_PMU_REGS		:= 0
 
 # Enable RMMD to forward attestation requests from RMM to EL3.
 RMMD_ENABLE_EL3_TOKEN_SIGN	:= 0
+
+# Live firmware activation support
+LFA_SUPPORT			:= 0
