@@ -7,7 +7,12 @@
 #ifndef LFA_SVC_H
 #define LFA_SVC_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <lib/smccc.h>
+#include <services/lfa_activation_handler.h>
+#include <tools_share/uuid.h>
 
 /*
  * SMC function IDs for LFA Service
@@ -62,8 +67,16 @@ enum lfa_retc {
 	LFA_ACTIVATION_FAILED		= -11,
 };
 
+typedef struct lfa_component {
+	uint32_t image_id;
+	uuid_t uuid;
+	struct lfa_activator_fns *activator;
+	bool activation_pending;
+} lfa_component_t;
+
 uint64_t lfa_smc_handler(uint32_t smc_fid, u_register_t x1, u_register_t x2,
 			 u_register_t x3, u_register_t x4, void *cookie,
 			 void *handle, u_register_t flags);
+void lfa_reset_activation(void);
 
 #endif /* LFA_SVC_H */
