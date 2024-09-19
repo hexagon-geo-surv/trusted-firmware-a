@@ -21,6 +21,8 @@ static int32_t lfa_rmm_activate(struct lfa_activation *activation,
 static struct lfa_activator_fns rmm_activator = {
 	.prime = lfa_rmm_prime,
 	.activate = lfa_rmm_activate,
+	.may_reset_cpu = 0,
+	.cpu_rendezvous_required = 1,
 };
 
 struct lfa_activator_fns* get_rmm_activator(void)

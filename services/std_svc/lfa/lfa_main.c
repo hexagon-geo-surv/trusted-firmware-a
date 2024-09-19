@@ -79,10 +79,27 @@ static void lfa_initialize_components()
 	}
 }
 
+static void lfa_set_fw_active_pend(uint32_t fw_seq_id)
+{
+	/* grab the UUID of the component */
+	uint32_t image_id = lfa_components[fw_seq_id].image_id;
+
+	/*
+	 * check the presence of update of the given image_id in the
+	 * platform specific way.
+	 * */
+	bool fw_update_avail = is_plat_fw_update_avail(image_id);
+
+	lfa_components[fw_seq_id].activation_pending = fw_update_avail;
+}
+
 uint64_t lfa_smc_handler(uint32_t smc_fid, u_register_t x1, u_register_t x2,
 			 u_register_t x3, u_register_t x4, void *cookie,
 			 void *handle, u_register_t flags)
 {
+	uint64_t retx1, retx2;
+	uint8_t *uuid_p;
+
 	switch (smc_fid) {
 	case LFA_SVC_VERSION:
 		SMC_RET1(handle, LFA_VERSION);
@@ -105,6 +122,49 @@ uint64_t lfa_smc_handler(uint32_t smc_fid, u_register_t x1, u_register_t x2,
 		break;
 
 	case LFA_SVC_GET_INVENTORY:
+		if (lfa_component_count == 0U) {
+			SMC_RET1(handle, LFA_WRONG_STATE);
+		}
+
+		/*
+		 * Check if fw_seq_id is in range. LFA_GET_INFO must be called first to scan
+		 * platform firmware and create a valid number of firmware components.
+		 */
+		if (x1 >= lfa_component_count) {
+			SMC_RET1(handle, LFA_INVALID_ARGUMENTS);
+		}
+
+		/*
+		 * grab the UUID of asked fw_seq_id and set the return UUID
+		 * variables
+		 */
+		uuid_p = (uint8_t *)&lfa_components[x1].uuid;
+		memcpy(&retx1, uuid_p, sizeof(uint64_t));
+		memcpy(&retx2, uuid_p + sizeof(uint64_t), sizeof(uint64_t));
+
+		/*
+		 * check the given fw_seq_id's update available
+		 * and accordingly set the active_pending flag
+		 * */
+		lfa_set_fw_active_pend((uint32_t)x1);
+
+		if (lfa_components[x1].activator != NULL) {
+			INFO("Component %lu supports live activation:\n", x1);
+			INFO("  Activation pending: %s\n",
+				lfa_components[x1].activation_pending ?
+				"true" : "false");
+		} else {
+			INFO("Component %ld does not support live activation:\n", x1);
+		}
+
+		INFO("  x1 = 0x%016lx, x2 = 0x%016lx, \n", retx1, retx2);
+
+		SMC_RET4(handle, LFA_SUCCESS, retx1, retx2,
+			 (uint64_t)((lfa_components[x1].activator == NULL) ? 0 : 1) |
+			 (uint64_t)(lfa_components[x1].activation_pending) << 1 |
+			 (uint64_t)(lfa_components[x1].activator->may_reset_cpu) << 2 |
+			 (uint64_t)!(lfa_components[x1].activator->cpu_rendezvous_required) << 3);
+
 		break;
 
 	case LFA_SVC_PRIME:

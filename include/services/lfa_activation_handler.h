@@ -7,6 +7,7 @@
 #ifndef LFA_ACTIVATION_HANDLER_H
 #define LFA_ACTIVATION_HANDLER_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define PRIME_NONE		U(0)
@@ -23,6 +24,8 @@ typedef int32_t (*component_activate_fn)(struct lfa_activation *activation,
 struct lfa_activator_fns {
 	component_prime_fn prime;
 	component_activate_fn activate;
+	bool may_reset_cpu;
+	bool cpu_rendezvous_required;
 };
 
 #endif /* LFA_ACTIVATION_HANDLER_H */

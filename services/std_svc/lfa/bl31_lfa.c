@@ -22,6 +22,8 @@ static int32_t lfa_bl31_activate(struct lfa_activation *activation,
 static struct lfa_activator_fns bl31_activator = {
         .prime = lfa_bl31_prime,
         .activate = lfa_bl31_activate,
+	.may_reset_cpu = 0,
+	.cpu_rendezvous_required = 1,
 };
 
 struct lfa_activator_fns* get_bl31_activator(void)
