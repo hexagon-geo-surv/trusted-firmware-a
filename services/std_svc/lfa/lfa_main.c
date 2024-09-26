@@ -42,6 +42,25 @@ static void lfa_register_component(uint32_t image_id, const uuid_t *uuid,
 	lfa_component_count += 1;
 }
 
+static int lfa_cancel(uint32_t component_id)
+{
+	int ret = LFA_SUCCESS;
+
+	if (lfa_component_count == 0U) {
+		return LFA_WRONG_STATE;
+	}
+
+	/* Check if component ID is in range. */
+	if (component_id >= lfa_component_count) {
+		return LFA_INVALID_ARGUMENTS;
+	}
+
+	/* TODO: add proper termination prime and activate phases */
+	lfa_reset_activation();
+
+	return ret;
+}
+
 static void lfa_initialize_components()
 {
 	struct lfa_activator_fns *activator;
@@ -99,6 +118,7 @@ uint64_t lfa_smc_handler(uint32_t smc_fid, u_register_t x1, u_register_t x2,
 {
 	uint64_t retx1, retx2;
 	uint8_t *uuid_p;
+	uint32_t ret;
 
 	switch (smc_fid) {
 	case LFA_SVC_VERSION:
@@ -174,6 +194,9 @@ uint64_t lfa_smc_handler(uint32_t smc_fid, u_register_t x1, u_register_t x2,
 		break;
 
 	case LFA_SVC_CANCEL:
+		ret = lfa_cancel(x1);
+
+		SMC_RET1(handle, ret);
 		break;
 
 	default:
