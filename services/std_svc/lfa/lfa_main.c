@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+#include <errno.h>
 
 #include <common/tbbr/tbbr_img_def.h>
 #include <services/bl31_lfa.h>
@@ -112,11 +113,125 @@ static void lfa_set_fw_active_pend(uint32_t fw_seq_id)
 	lfa_components[fw_seq_id].activation_pending = fw_update_avail;
 }
 
+static int lfa_activate(uint32_t component_id, uint64_t ep_address,
+			uint64_t context_id, uint64_t __unused *flags)
+{
+	int ret = LFA_SUCCESS;
+	struct lfa_activator_fns *activator;
+
+	if (lfa_component_count == 0U) {
+		return LFA_COMPONENT_WRONG_STATE;
+	}
+
+	/* Check if fw_seq_id is in range. */
+	if (component_id >= lfa_component_count) {
+		return LFA_INVALID_ARGUMENTS;
+	}
+
+	if (lfa_components[component_id].activator == NULL) {
+		return LFA_NOT_SUPPORTED;
+	}
+
+	if (!lfa_components[component_id].activation_pending) {
+		return LFA_COMPONENT_WRONG_STATE;
+	}
+
+	if (current_activation.component_id != component_id) {
+		return LFA_INVALID_ARGUMENTS;
+	}
+
+	if (current_activation.prime_status != PRIME_COMPLETE) {
+		return LFA_COMPONENT_WRONG_STATE;
+	}
+
+	activator = lfa_components[component_id].activator;
+	if (activator->activate != NULL) {
+                /* Pass skip_cpu_rendezvous (flag[0]) only if flag[0]==1 & CPU_RENDEZVOUS is not required */
+                if(*flags & 0x1) {
+                        if(!activator->cpu_rendezvous_required) {
+                                INFO("Skipping rendezvous requested by caller.\n");
+                                current_activation.cpu_rendezvous = 0;
+                        }
+                        /* Return error if caller tries to skip rendezvous when it is required */
+                        else {
+                                ERROR("Cannot skip CPU Rendezvous when it is required.\n");
+                                return LFA_INVALID_ARGUMENTS;
+                        }
+                }
+
+		ret = activator->activate(&current_activation, ep_address,
+					  context_id);
+	}
+
+	return ret;
+}
+
+static int lfa_prime(uint32_t component_id, uint64_t *flags)
+{
+	int ret = LFA_SUCCESS;
+	struct lfa_activator_fns *activator;
+
+	if (lfa_component_count == 0U) {
+		return LFA_WRONG_STATE;
+	}
+
+	/* Check if fw_seq_id is in range. */
+	if (component_id >= lfa_component_count) {
+		return LFA_INVALID_ARGUMENTS;
+	}
+
+	if (lfa_components[component_id].activator == NULL) {
+		return LFA_NOT_SUPPORTED;
+	}
+
+	if (!lfa_components[component_id].activation_pending) {
+		return LFA_WRONG_STATE;
+	}
+
+	if (current_activation.prime_status == PRIME_NONE) {
+		current_activation.component_id = component_id;
+		current_activation.prime_status = PRIME_STARTED;
+	} else if (current_activation.prime_status == PRIME_STARTED) {
+		if (current_activation.component_id != component_id) {
+			return LFA_WRONG_STATE;
+		}
+	} else if (current_activation.prime_status == PRIME_COMPLETE) {
+		return LFA_WRONG_STATE;
+	}
+
+	activator = lfa_components[component_id].activator;
+	if (activator->prime != NULL) {
+		ret = activator->prime(&current_activation);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	ret = plat_lfa_load_auth_image(lfa_components[component_id].image_id);
+	if (ret != 0) {
+		if (ret == -EAUTH) {
+			return LFA_AUTH_ERROR;
+		} else if (ret == -ENOMEM) {
+			return LFA_NO_MEMORY;
+		} else {
+			return LFA_DEVICE_ERROR;
+		}
+	}
+
+	current_activation.prime_status = PRIME_COMPLETE;
+
+	/* TODO: split this into multiple PRIME calls */
+	*flags = 0;
+
+	return ret;
+}
+
 uint64_t lfa_smc_handler(uint32_t smc_fid, u_register_t x1, u_register_t x2,
 			 u_register_t x3, u_register_t x4, void *cookie,
 			 void *handle, u_register_t flags)
 {
 	uint64_t retx1, retx2;
+	uint64_t lfa_flags = 0U;
 	uint8_t *uuid_p;
 	uint32_t ret;
 
@@ -188,9 +303,19 @@ uint64_t lfa_smc_handler(uint32_t smc_fid, u_register_t x1, u_register_t x2,
 		break;
 
 	case LFA_SVC_PRIME:
+		ret = lfa_prime(x1, &lfa_flags);
+		if (ret != LFA_SUCCESS) {
+			SMC_RET1(handle, ret);
+		} else {
+			SMC_RET2(handle, ret, lfa_flags);
+		}
+
 		break;
 
 	case LFA_SVC_ACTIVATE:
+		ret = lfa_activate(x1, x2, x3, &lfa_flags);
+		SMC_RET1(handle, ret);
+
 		break;
 
 	case LFA_SVC_CANCEL:

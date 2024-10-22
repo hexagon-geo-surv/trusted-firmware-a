@@ -11,10 +11,13 @@
 #include <stdint.h>
 
 #define PRIME_NONE		U(0)
+#define PRIME_STARTED		U(1)
+#define PRIME_COMPLETE		U(2)
 
 struct lfa_activation {
 	uint32_t component_id;
 	int prime_status;
+	bool cpu_rendezvous;
 };
 
 typedef int32_t (*component_prime_fn)(struct lfa_activation *activation);
