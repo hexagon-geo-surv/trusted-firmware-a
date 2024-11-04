@@ -25,6 +25,8 @@
 #include "plat_drtm.h"
 #endif /* DRTM_SUPPORT */
 
+#include <tools_share/uuid.h>
+
 /*******************************************************************************
  * Forward declarations
  ******************************************************************************/
@@ -507,5 +509,7 @@ static inline uint64_t plat_can_cmo(void)
 	return 1;
 }
 #endif /* CONDITIONAL_CMO */
+
+uint32_t plat_get_lfa_image_info(uint32_t index, const uuid_t **uuid);
 
 #endif /* PLATFORM_H */
