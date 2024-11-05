@@ -512,4 +512,5 @@ static inline uint64_t plat_can_cmo(void)
 
 uint32_t plat_get_lfa_image_info(uint32_t index, const uuid_t **uuid);
 
+bool is_plat_fw_update_avail(uint32_t image_id);
 #endif /* PLATFORM_H */

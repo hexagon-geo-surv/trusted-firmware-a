@@ -31,3 +31,13 @@ uint32_t plat_get_lfa_image_info(int index, const uuid_t **uuid)
 
 	return fvp_imgs[index].img_id;
 }
+
+bool is_plat_fw_update_avail(uint32_t image_id)
+{
+	/* As RMM_IMAGE is preloaded */
+	if (image_id == RMM_IMAGE_ID) {
+		return true;
+	}
+
+	return false;
+}
