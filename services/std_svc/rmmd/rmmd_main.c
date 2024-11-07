@@ -60,6 +60,8 @@ static entry_point_info_t *rmm_ep_info;
  ******************************************************************************/
 static int32_t rmm_init(void);
 
+static spinlock_t secondary_lock;
+
 /*******************************************************************************
  * This function takes an RMM context pointer and performs a synchronous entry
  * into it.
@@ -595,4 +597,34 @@ uint64_t rmmd_rmm_el3_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2,
 		WARN("RMMD: Unsupported RMM-EL3 call 0x%08x\n", smc_fid);
 		SMC_RET1(handle, SMC_UNK);
 	}
+}
+
+/**
+ * Added this helper to warm reset of Primary CPU, mainly during LFA
+ * of RMM.
+ */
+int rmmd_primary_warm_reset(void)
+{
+
+	rmmd_setup(true);
+	_rmm_init(true);
+
+	INFO("RMM Primary warm reset end.\n");
+
+	return 0;
+}
+
+/**
+ * Added this helper to warm reset of Secondary CPUs, mainly during LFA
+ * of RMM.
+ */
+int rmmd_secondary_warm_reset()
+{
+	spin_lock(&secondary_lock);
+
+	rmmd_cpu_on_finish_handler(NULL);
+
+	spin_unlock(&secondary_lock);
+
+	return 0;
 }
