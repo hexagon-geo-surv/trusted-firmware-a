@@ -41,3 +41,13 @@ bool is_plat_fw_update_avail(uint32_t image_id)
 
 	return false;
 }
+
+int plat_lfa_load_auth_image(uint32_t img_id)
+{
+	/*
+	 * In AEM FVP, we don't want to bloat the code by adding
+	 * loading and authentication mechanism, so here we assumed
+	 * that the components are pre-loaded and authenticated already.
+	 */
+	return 0;
+}
