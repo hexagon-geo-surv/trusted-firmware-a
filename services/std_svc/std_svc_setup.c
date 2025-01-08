@@ -66,7 +66,7 @@ static int32_t std_svc_setup(void)
 #endif
 
 #if ENABLE_RME
-	if (rmmd_setup() != 0) {
+	if (rmmd_setup(false) != 0) {
 		WARN("RMMD setup failed. Continuing boot.\n");
 	}
 #endif

@@ -185,12 +185,12 @@ static void manage_extensions_realm_per_world(void)
 /*******************************************************************************
  * Jump to the RMM for the first time.
  ******************************************************************************/
-static int32_t rmm_init(void)
+static int32_t _rmm_init(bool update)
 {
 	long rc;
 	rmmd_rmm_context_t *ctx = &rmm_context[plat_my_core_pos()];
 
-	INFO("RMM init start.\n");
+	INFO("RMM %s start.\n", update ? "update" : "init");
 
 	/* Enable architecture extensions */
 	manage_extensions_realm(&ctx->cpu_ctx);
@@ -202,21 +202,33 @@ static int32_t rmm_init(void)
 
 	rc = rmmd_rmm_sync_entry(ctx);
 	if (rc != E_RMM_BOOT_SUCCESS) {
-		ERROR("RMM init failed: %ld\n", rc);
-		/* Mark the boot as failed for all the CPUs */
-		rmm_boot_failed = true;
+		if (!update) {
+			ERROR("RMM init failed: %ld\n", rc);
+			/* Mark the boot as failed for all the CPUs */
+			rmm_boot_failed = true;
+		} else {
+			ERROR("RMM re-initialisation failed: %ld\n", rc);
+		}
 		return 0;
 	}
 
-	INFO("RMM init end.\n");
+	if (!update) {
+		INFO("RMM init end.\n");
+	}
 
 	return 1;
 }
 
+static int32_t rmm_init(void)
+{
+	return _rmm_init(false);
+}
+
+
 /*******************************************************************************
  * Load and read RMM manifest, setup RMM.
  ******************************************************************************/
-int rmmd_setup(void)
+int rmmd_setup(bool update)
 {
 	size_t shared_buf_size __unused;
 	uintptr_t shared_buf_base;
@@ -233,14 +245,23 @@ int rmmd_setup(void)
 		return -ENOTSUP;
 	}
 
-	rmm_ep_info = bl31_plat_get_next_image_ep_info(REALM);
+	if (update) {
+		rmm_ep_info = bl31_plat_get_next_update_image_ep_info(REALM);
+	} else {
+		rmm_ep_info = bl31_plat_get_next_image_ep_info(REALM);
+	}
 	if ((rmm_ep_info == NULL) || (rmm_ep_info->pc == 0)) {
-		WARN("No RMM image provided by BL2 boot loader, Booting "
-		     "device without RMM initialization. SMCs destined for "
-		     "RMM will return SMC_UNK\n");
+		if (update) {
+			WARN("No RMM update image provided, update failed: ep_info: %p, PC: 0x%lx\n",
+			     rmm_ep_info, rmm_ep_info ? rmm_ep_info->pc : 0);
+		} else {
+			WARN("No RMM image provided by BL2 boot loader, Booting "
+			     "device without RMM initialization. SMCs destined for "
+			     "RMM will return SMC_UNK\n");
 
-		/* Mark the boot as failed for all the CPUs */
-		rmm_boot_failed = true;
+			/* Mark the boot as failed for all the CPUs */
+			rmm_boot_failed = true;
+		}
 		return -ENOENT;
 	}
 
@@ -269,7 +290,9 @@ int rmmd_setup(void)
 	if (rc != 0) {
 		ERROR("Error loading RMM Boot Manifest (%i)\n", rc);
 		/* Mark the boot as failed for all the CPUs */
-		rmm_boot_failed = true;
+		if (!update) {
+			rmm_boot_failed = true;
+		}
 		return rc;
 	}
 	flush_dcache_range((uintptr_t)shared_buf_base, shared_buf_size);
@@ -290,7 +313,7 @@ int rmmd_setup(void)
 	/* Initialise RMM context with this entry point information */
 	cm_setup_context(&rmm_ctx->cpu_ctx, rmm_ep_info);
 
-	INFO("RMM setup done.\n");
+	INFO("RMM %ssetup done.\n", update ? "update " : "");
 
 	/* Register init function for deferred init.  */
 	bl31_register_rmm_init(&rmm_init);

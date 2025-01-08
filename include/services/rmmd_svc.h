@@ -213,7 +213,7 @@
 #ifndef __ASSEMBLER__
 #include <stdint.h>
 
-int rmmd_setup(void);
+int rmmd_setup(bool update);
 uint64_t rmmd_rmi_handler(uint32_t smc_fid,
 		uint64_t x1,
 		uint64_t x2,
