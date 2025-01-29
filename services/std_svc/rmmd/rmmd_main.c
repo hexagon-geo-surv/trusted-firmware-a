@@ -23,6 +23,7 @@
 #include <lib/extensions/pmuv3.h>
 #include <lib/extensions/sys_reg_trace.h>
 #include <lib/gpt_rme/gpt_rme.h>
+#include <lib/per_cpu/per_cpu.h>
 
 #include <lib/spinlock.h>
 #include <lib/utils.h>
@@ -47,7 +48,7 @@ static bool rmm_boot_failed;
 /*******************************************************************************
  * RMM context information.
  ******************************************************************************/
-rmmd_rmm_context_t rmm_context[PLATFORM_CORE_COUNT];
+DEFINE_PER_CPU(rmmd_rmm_context_t, rmm_context);
 
 /*******************************************************************************
  * RMM entry point information. Discovered on the primary core and reused
@@ -95,7 +96,7 @@ uint64_t rmmd_rmm_sync_entry(rmmd_rmm_context_t *rmm_ctx)
  ******************************************************************************/
 __dead2 void rmmd_rmm_sync_exit(uint64_t rc)
 {
-	rmmd_rmm_context_t *ctx = &rmm_context[plat_my_core_pos()];
+	rmmd_rmm_context_t *ctx = THIS_CPU_PTR(rmm_context);
 
 	/* Get context of the RMM in use by this CPU. */
 	assert(cm_get_context(REALM) == &(ctx->cpu_ctx));
@@ -188,7 +189,7 @@ static void manage_extensions_realm_per_world(void)
 static int32_t rmm_init(void)
 {
 	long rc;
-	rmmd_rmm_context_t *ctx = &rmm_context[plat_my_core_pos()];
+	rmmd_rmm_context_t *ctx = THIS_CPU_PTR(rmm_context);
 
 	INFO("RMM init start.\n");
 
@@ -222,7 +223,7 @@ int rmmd_setup(void)
 	uintptr_t shared_buf_base;
 	uint32_t ep_attr;
 	unsigned int linear_id = plat_my_core_pos();
-	rmmd_rmm_context_t *rmm_ctx = &rmm_context[linear_id];
+	rmmd_rmm_context_t *rmm_ctx = FOR_CPU_PTR(rmm_context, linear_id);
 	struct rmm_manifest *manifest;
 	int rc;
 
@@ -402,7 +403,7 @@ static void *rmmd_cpu_on_finish_handler(const void *arg)
 {
 	long rc;
 	uint32_t linear_id = plat_my_core_pos();
-	rmmd_rmm_context_t *ctx = &rmm_context[linear_id];
+	rmmd_rmm_context_t *ctx = FOR_CPU_PTR(rmm_context, linear_id);
 
 	if (rmm_boot_failed) {
 		/* RMM Boot failed on a previous CPU. Abort. */
