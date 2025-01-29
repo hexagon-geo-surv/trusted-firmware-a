@@ -30,6 +30,8 @@
 					NRD_MAX_CPUS_PER_CLUSTER *	\
 					NRD_MAX_PE_PER_CPU)
 
+#define PLATFORM_NODE_CORE_COUNT	(PLATFORM_CORE_COUNT/NRD_CHIP_COUNT)
+
 /*******************************************************************************
  * PA/VA config
  ******************************************************************************/
@@ -56,8 +58,8 @@
  * chips are accessed - secure ram, css device and soc device regions.
  */
 #if defined(IMAGE_BL31)
-#  define PLAT_ARM_MMAP_ENTRIES		(10 + ((NRD_CHIP_COUNT - 1) * 3))
-#  define MAX_XLAT_TABLES		(10 + ((NRD_CHIP_COUNT - 1) * 3))
+#  define PLAT_ARM_MMAP_ENTRIES		(11 + ((NRD_CHIP_COUNT - 1) * 3))
+#  define MAX_XLAT_TABLES		(11 + ((NRD_CHIP_COUNT - 1) * 3))
 #elif defined(IMAGE_BL32)
 # define PLAT_ARM_MMAP_ENTRIES		U(8)
 # define MAX_XLAT_TABLES		U(5)

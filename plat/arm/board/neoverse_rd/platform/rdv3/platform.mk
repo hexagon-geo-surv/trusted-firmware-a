@@ -53,6 +53,10 @@ endif
 # RD-V3 uses MHUv3
 PLAT_MHU := MHUv3
 
+ifeq (${NRD_PLATFORM_VARIANT}, 2)
+override NUMA_AWARE_PER_CPU	:= 1
+endif
+
 include plat/arm/board/neoverse_rd/common/nrd-common.mk
 include drivers/arm/rse/rse_comms.mk
 include drivers/auth/mbedtls/mbedtls_common.mk
@@ -116,6 +120,7 @@ BL31_SOURCES	+=	${NRD_CPU_SOURCES}				\
 			${RDV3_BASE}/rdv3_topology.c		\
 			${RDV3_BASE}/rdv3_plat_attest_token.c	\
 			${RDV3_BASE}/rdv3_realm_attest_key.c	\
+			${RDV3_BASE}/rdv3_per_cpu.S			\
 			drivers/arm/smmu/smmu_v3.c			\
 			drivers/cfi/v2m/v2m_flash.c			\
 			lib/psa/cca_attestation.c			\
