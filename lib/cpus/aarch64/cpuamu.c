@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2025, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -7,6 +7,7 @@
 #include <cpuamu.h>
 #include <lib/el3_runtime/pubsub_events.h>
 #include <plat/common/platform.h>
+#include <lib/per_cpu/per_cpu.h>
 
 #define CPUAMU_NR_COUNTERS	5U
 
@@ -15,7 +16,7 @@ struct cpuamu_ctx {
 	unsigned int mask;
 };
 
-static struct cpuamu_ctx cpuamu_ctxs[PLATFORM_CORE_COUNT];
+static DEFINE_PER_CPU(struct cpuamu_ctx, cpuamu_ctxs);
 
 int midr_match(unsigned int cpu_midr)
 {
@@ -29,7 +30,7 @@ int midr_match(unsigned int cpu_midr)
 
 void cpuamu_context_save(unsigned int nr_counters)
 {
-	struct cpuamu_ctx *ctx = &cpuamu_ctxs[plat_my_core_pos()];
+	struct cpuamu_ctx *ctx = THIS_CPU_PTR(cpuamu_ctxs);
 	unsigned int i;
 
 	assert(nr_counters <= CPUAMU_NR_COUNTERS);
@@ -48,7 +49,7 @@ void cpuamu_context_save(unsigned int nr_counters)
 
 void cpuamu_context_restore(unsigned int nr_counters)
 {
-	struct cpuamu_ctx *ctx = &cpuamu_ctxs[plat_my_core_pos()];
+	struct cpuamu_ctx *ctx = THIS_CPU_PTR(cpuamu_ctxs);
 	unsigned int i;
 
 	assert(nr_counters <= CPUAMU_NR_COUNTERS);

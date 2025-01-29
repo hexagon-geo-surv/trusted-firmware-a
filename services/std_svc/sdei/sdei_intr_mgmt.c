@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2024, Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2017-2025, Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -29,7 +29,7 @@
 #define MAX_EVENT_NESTING	2U
 
 /* Per-CPU SDEI state access macro */
-#define sdei_get_this_pe_state()	(&cpu_state[plat_my_core_pos()])
+#define sdei_get_this_pe_state()	(THIS_CPU_PTR(cpu_state))
 
 /* Structure to store information about an outstanding dispatch */
 typedef struct sdei_dispatch_context {
@@ -56,7 +56,7 @@ typedef struct sdei_cpu_state {
 } sdei_cpu_state_t;
 
 /* SDEI states for all cores in the system */
-static sdei_cpu_state_t cpu_state[PLATFORM_CORE_COUNT];
+static DEFINE_PER_CPU(sdei_cpu_state_t, cpu_state);
 
 int64_t sdei_pe_mask(void)
 {
