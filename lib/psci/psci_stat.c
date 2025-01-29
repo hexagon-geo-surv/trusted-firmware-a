@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2016-2025, Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -34,8 +34,7 @@ static int last_cpu_in_non_cpu_pd[PSCI_NUM_NON_CPU_PWR_DOMAINS] = {
  * Following are used to store PSCI STAT values for
  * CPU and non CPU power domains.
  */
-static psci_stat_t psci_cpu_stat[PLATFORM_CORE_COUNT]
-				[PLAT_MAX_PWR_LVL_STATES];
+static DEFINE_PER_CPU(psci_stat_t, psci_cpu_stat[PLAT_MAX_PWR_LVL_STATES]);
 static psci_stat_t psci_non_cpu_stat[PSCI_NUM_NON_CPU_PWR_DOMAINS]
 				[PLAT_MAX_PWR_LVL_STATES];
 
@@ -81,7 +80,7 @@ void psci_stats_update_pwr_down(unsigned int cpu_idx, unsigned int end_pwrlvl,
 	assert(end_pwrlvl <= PLAT_MAX_PWR_LVL);
 	assert(state_info != NULL);
 
-	parent_idx = psci_cpu_pd_nodes[cpu_idx].parent_node;
+	parent_idx = FOR_CPU(psci_cpu_pd_nodes, cpu_idx).parent_node;
 
 	for (lvl = PSCI_CPU_PWR_LVL + 1U; lvl <= end_pwrlvl; lvl++) {
 
@@ -125,14 +124,14 @@ void psci_stats_update_pwr_up(unsigned int cpu_idx, unsigned int end_pwrlvl,
 	    state_info, cpu_idx);
 
 	/* Update CPU stats. */
-	psci_cpu_stat[cpu_idx][stat_idx].residency += residency;
-	psci_cpu_stat[cpu_idx][stat_idx].count++;
+	GET_THIS_CPU(psci_cpu_stat[stat_idx]).residency += residency;
+	GET_THIS_CPU(psci_cpu_stat[stat_idx]).count++;
 
 	/*
 	 * Check what power domains above CPU were off
 	 * prior to this CPU powering on.
 	 */
-	parent_idx = psci_cpu_pd_nodes[cpu_idx].parent_node;
+	parent_idx = FOR_CPU(psci_cpu_pd_nodes, cpu_idx).parent_node;
 	/* Return early if this is the first power up. */
 	if (last_cpu_in_non_cpu_pd[parent_idx] == -1)
 		return;
@@ -205,7 +204,7 @@ static int psci_get_stat(u_register_t target_cpu, unsigned int power_state,
 
 	if (pwrlvl > PSCI_CPU_PWR_LVL) {
 		/* Get the power domain index */
-		parent_idx = SPECULATION_SAFE_VALUE(psci_cpu_pd_nodes[target_idx].parent_node);
+		parent_idx = SPECULATION_SAFE_VALUE(FOR_CPU(psci_cpu_pd_nodes, target_idx).parent_node);
 		for (lvl = PSCI_CPU_PWR_LVL + 1U; lvl < pwrlvl; lvl++)
 			parent_idx = SPECULATION_SAFE_VALUE(psci_non_cpu_pd_nodes[parent_idx].parent_node);
 
@@ -213,7 +212,7 @@ static int psci_get_stat(u_register_t target_cpu, unsigned int power_state,
 		*psci_stat = psci_non_cpu_stat[parent_idx][stat_idx];
 	} else {
 		/* Get the cpu power domain stats */
-		*psci_stat = psci_cpu_stat[target_idx][stat_idx];
+		*psci_stat = FOR_CPU(psci_cpu_stat[stat_idx], target_idx);
 	}
 
 	return PSCI_E_SUCCESS;
