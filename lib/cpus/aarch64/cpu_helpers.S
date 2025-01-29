@@ -13,6 +13,7 @@
 #include <lib/cpus/cpu_ops.h>
 #include <lib/cpus/errata.h>
 #include <lib/el3_runtime/cpu_data.h>
+#include <lib/per_cpu/per_cpu_macros.S>
 
 #ifdef IMAGE_BL31 /* The power down core and cluster is needed only in  BL31 */
 	/*
@@ -33,7 +34,7 @@ func prepare_cpu_pwr_dwn
 	cmp	x0, x2
 	csel	x2, x2, x0, hi
 
-	mrs	x1, tpidr_el3
+	base_this_cpu_ptr x1
 	ldr	x0, [x1, #CPU_DATA_CPU_OPS_PTR]
 #if ENABLE_ASSERTIONS
 	cmp	x0, #0
@@ -60,7 +61,7 @@ endfunc prepare_cpu_pwr_dwn
 	 */
 	.globl	init_cpu_ops
 func init_cpu_ops
-	mrs	x6, tpidr_el3
+	base_this_cpu_ptr x6
 	ldr	x0, [x6, #CPU_DATA_CPU_OPS_PTR]
 	cbnz	x0, 1f
 	mov	x10, x30
