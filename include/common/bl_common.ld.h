@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2020-2025, Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -7,6 +7,9 @@
 #ifndef BL_COMMON_LD_H
 #define BL_COMMON_LD_H
 
+#if IMAGE_BL31
+#include <lib/per_cpu/per_cpu_defs.h>
+#endif
 #include <platform_def.h>
 
 #ifdef __aarch64__
@@ -224,6 +227,24 @@
 		BASE_XLAT_TABLE_BSS			\
 		__BSS_END__ = .;			\
 	}
+
+/* The .per_cpu section gets initialised to 0 at runtime. */
+#if IMAGE_BL31
+#define PER_CPU_SECTION							\
+	.per_cpu (NOLOAD) : ALIGN(CACHE_WRITEBACK_GRANULE) {		\
+	__PER_CPU_START__ = .;						\
+	__PER_CPU_START_UNIT__ = .;					\
+	*(SORT_BY_ALIGNMENT(.per_cpu*))					\
+	__PER_CPU_END_UNIT__ = .;					\
+	. = ALIGN(CACHE_WRITEBACK_GRANULE);				\
+	__PER_CPU_END_UNIT_CLA__ = .;					\
+	__PER_CPU_UNIT_SECTION_SIZE__ =					\
+	ABSOLUTE(__PER_CPU_END_UNIT_CLA__ - __PER_CPU_START_UNIT__);	\
+	. = . + (PER_CPU_NODE_CORE_COUNT - 1)				\
+	* __PER_CPU_UNIT_SECTION_SIZE__;				\
+	__PER_CPU_SIZE__ = ABSOLUTE(. -__PER_CPU_START__);		\
+	}
+#endif /*IMAGE_BL31*/
 
 /*
  * The .xlat_table section is for full, aligned page tables (4K).

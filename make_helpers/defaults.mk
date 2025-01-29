@@ -440,3 +440,7 @@ RMMD_ENABLE_EL3_TOKEN_SIGN	:= 0
 # This flag is temporary and it is expected once the interface is
 # finalized, this flag will be removed.
 RMMD_ENABLE_IDE_KEY_PROG	:= 0
+
+# Disable NUMA awareness for per-CPU framework by default. Platforms should
+# enable this feature if needed
+NUMA_AWARE_PER_CPU		:= 0
