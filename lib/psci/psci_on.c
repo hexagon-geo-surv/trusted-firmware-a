@@ -23,12 +23,12 @@
  */
 static inline void psci_spin_lock_cpu(unsigned int idx)
 {
-	spin_lock(&psci_cpu_pd_nodes[idx].cpu_lock);
+	spin_lock(&FOR_CPU(psci_cpu_pd_nodes, idx).cpu_lock);
 }
 
 static inline void psci_spin_unlock_cpu(unsigned int idx)
 {
-	spin_unlock(&psci_cpu_pd_nodes[idx].cpu_lock);
+	spin_unlock(&FOR_CPU(psci_cpu_pd_nodes, idx).cpu_lock);
 }
 
 /*******************************************************************************
@@ -222,5 +222,5 @@ void psci_cpu_on_finish(unsigned int cpu_idx, const psci_power_state_t *state_in
 
 	/* Populate the mpidr field within the cpu node array */
 	/* This needs to be done only once */
-	psci_cpu_pd_nodes[cpu_idx].mpidr = read_mpidr() & MPIDR_AFFINITY_MASK;
+	FOR_CPU(psci_cpu_pd_nodes, cpu_idx).mpidr = read_mpidr() & MPIDR_AFFINITY_MASK;
 }
