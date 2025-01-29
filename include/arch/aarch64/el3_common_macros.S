@@ -42,16 +42,14 @@
 
 #ifdef IMAGE_BL31
 	/* ---------------------------------------------------------------------
-	 * Initialise the per-cpu cache pointer to the CPU.
+	 * Initialise the per-cpu framework to utilize tpidr_el3.
 	 * This is done early to enable crash reporting to have access to crash
 	 * stack. Since crash reporting depends on cpu_data to report the
 	 * unhandled exception, not doing so can lead to recursive exceptions
 	 * due to a NULL TPIDR_EL3.
 	 * ---------------------------------------------------------------------
 	 */
-	bl	plat_my_core_pos
-	bl	_cpu_data_by_index
-	msr	tpidr_el3, x0
+	bl	per_cpu_init
 #endif /* IMAGE_BL31 */
 
 	/* ---------------------------------------------------------------------
