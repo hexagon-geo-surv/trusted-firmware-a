@@ -10,7 +10,9 @@
 #include <arch.h>
 #include <asm_macros.S>
 #include <lib/per_cpu/per_cpu_defs.h>
+#include <lib/per_cpu/per_cpu_macros.S>
 
+.globl per_cpu_init
 .globl plat_get_node_base
 
 /* -----------------------------------------------------------------
@@ -34,5 +36,21 @@ func plat_get_node_base
 #endif
 	ret
 endfunc plat_get_node_base
+
+/* -----------------------------------------------------------------
+ *	Populates tpidr_el3  with cpu specfic per cpu section's
+ *	offset address.
+ *	Clobbers: x0 - x3
+ * -----------------------------------------------------------------
+ */
+func per_cpu_init
+	mov	x10, x30
+	bl	plat_my_core_pos
+	per_cpu_pe_addr x0
+	/* Update tpidr_el3 with offset */
+	msr	tpidr_el3, x0
+	mov	x30, x10
+	ret
+endfunc per_cpu_init
 
 #endif /* PER_CPU_S*/
