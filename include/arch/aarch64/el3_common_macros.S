@@ -314,6 +314,24 @@
 		bl	inv_dcache_range
 #endif
 #endif
+
+#if defined(IMAGE_BL31)
+		adrp	x0, __PER_CPU_START__
+		add	x0, x0, :lo12:__PER_CPU_START__
+		adrp	x1, __PER_CPU_SIZE__
+		add	x1, x1, :lo12:__PER_CPU_SIZE__
+		bl	zeromem
+#if NUMA_AWARE_PER_CPU
+		/*
+		 * Zero-initialize per-cpu sections defined by the platform.
+		 * Care must be taken to preserve and retain the clobbered
+		 * registers. A standard around the container for per-cpu nodes
+		 * is not yet defined. This can be revisited.
+		 */
+		bl	plat_zero_init_per_cpu_section
+#endif /* NUMA_AWARE_PER_CPU */
+#endif
+
 		adrp	x0, __BSS_START__
 		add	x0, x0, :lo12:__BSS_START__
 
