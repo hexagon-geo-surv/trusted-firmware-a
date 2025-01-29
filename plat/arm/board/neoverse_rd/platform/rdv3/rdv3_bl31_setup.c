@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2025, Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -14,6 +14,8 @@
 #include <nrd_plat.h>
 #include <nrd_variant.h>
 #include <rdv3_rse_comms.h>
+#include <lib/per_cpu/per_cpu.h>
+#include <nrd_css_fw_def3.h>
 
 #define RT_OWNER 0
 
@@ -132,6 +134,29 @@ static uintptr_t rdv3mc_multichip_gicr_frames[] = {
 };
 #endif /* NRD_PLATFORM_VARIANT == 2 */
 
+void __init bl31_plat_arch_setup(void)
+{
+#if (NRD_PLATFORM_VARIANT == 2)
+#if NUMA_AWARE_PER_CPU
+	int ret;
+#endif
+	arm_bl31_plat_arch_setup();
+#if NUMA_AWARE_PER_CPU
+	for(int i = 1; i <= 3 ; i++) {
+		ret = mmap_add_dynamic_region(
+		NRD_REMOTE_CHIP_MEM_OFFSET(i),
+		NRD_REMOTE_CHIP_MEM_OFFSET(i),
+		NRD_CSS_ALIGN_TO_4K(PER_CPU_SIZE),
+		MT_MEMORY | MT_RW | EL3_PAS);
+		if (ret != 0) {
+			ERROR("Failed to add per-cpu mmap (ret=%d)", ret);
+			panic();
+		}
+	}
+#endif
+#endif
+}
+
 void bl31_platform_setup(void)
 {
 	/*
@@ -182,6 +207,16 @@ void bl31_platform_setup(void)
 		WARN("Failed initializing AP-RSE comms.\n");
 	}
 }
+
+/* Base address for different per CPU sections */
+const uintptr_t per_cpu_remote_section_base[] = {
+	(uintptr_t)PER_CPU_START,
+#if NUMA_AWARE_PER_CPU
+	(uintptr_t)NRD_REMOTE_CHIP_MEM_OFFSET(1),
+	(uintptr_t)NRD_REMOTE_CHIP_MEM_OFFSET(2),
+	(uintptr_t)NRD_REMOTE_CHIP_MEM_OFFSET(3)
+#endif
+};
 
 #if RESET_TO_BL31
 /*
