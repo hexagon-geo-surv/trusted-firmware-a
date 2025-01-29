@@ -33,8 +33,9 @@ func prepare_cpu_pwr_dwn
 	cmp	x0, x2
 	csel	x2, x2, x0, hi
 
-	mrs	x1, tpidr_el3
-	ldr	x0, [x1, #CPU_DATA_CPU_OPS_PTR]
+	/* Use per-cpu framework to get address of cpu_data object in x0 */
+	bl	get_this_cpu_data
+	ldr	x0, [x0, #CPU_DATA_CPU_OPS_PTR]
 #if ENABLE_ASSERTIONS
 	cmp	x0, #0
 	ASM_ASSERT(ne)
@@ -60,14 +61,20 @@ endfunc prepare_cpu_pwr_dwn
 	 */
 	.globl	init_cpu_ops
 func init_cpu_ops
-	mrs	x6, tpidr_el3
-	ldr	x0, [x6, #CPU_DATA_CPU_OPS_PTR]
-	cbnz	x0, 1f
+	/* use per-cpu framework to get address of cpu_data object in x0 */
 	mov	x10, x30
+	bl get_this_cpu_data
+	mov x6, x0
+	ldr	x0, [x0, #CPU_DATA_CPU_OPS_PTR]
+	cbnz	x0, 1f
 	bl	get_cpu_ops_ptr
+#if ENABLE_ASSERTIONS
+	cmp	x0, #0
+	ASM_ASSERT(ne)
+#endif
 	str	x0, [x6, #CPU_DATA_CPU_OPS_PTR]!
-	mov x30, x10
 1:
+	mov x30, x10
 	ret
 endfunc init_cpu_ops
 #endif /* IMAGE_BL31 */
@@ -203,7 +210,10 @@ endfunc cpu_get_rev_var
  */
 	.globl	check_wa_cve_2017_5715
 func check_wa_cve_2017_5715
-	mrs	x0, tpidr_el3
+	mov x10, x30
+	/* Use per-cpu framework to get address of cpu_data object in x0 */
+	bl get_this_cpu_data
+	mov x30, x10
 #if ENABLE_ASSERTIONS
 	cmp	x0, #0
 	ASM_ASSERT(ne)
@@ -277,7 +287,10 @@ endfunc check_wa_cve_2024_7881
  */
 	.globl	wa_cve_2018_3639_get_disable_ptr
 func wa_cve_2018_3639_get_disable_ptr
-	mrs	x0, tpidr_el3
+	mov x10, x30
+	/* Use per-cpu framework to get address of cpu_data object in x0 */
+	bl get_this_cpu_data
+	mov x30, x10
 #if ENABLE_ASSERTIONS
 	cmp	x0, #0
 	ASM_ASSERT(ne)
@@ -306,7 +319,10 @@ endfunc wa_cve_2018_3639_get_disable_ptr
  */
 	.globl	check_smccc_arch_wa3_applies
 func check_smccc_arch_wa3_applies
-	mrs	x0, tpidr_el3
+	mov x10, x30
+	/* Use per-cpu framework to get address of cpu_data object in x0 */
+	bl get_this_cpu_data
+	mov x30, x10
 #if ENABLE_ASSERTIONS
 	cmp	x0, #0
 	ASM_ASSERT(ne)

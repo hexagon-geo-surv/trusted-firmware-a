@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2024, Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2025, Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -87,10 +87,11 @@
 	 * saved to the PMF timestamp region.
 	 */
 	mrs	x30, cntpct_el0
-	str	x29, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X29]
-	mrs	x29, tpidr_el3
-	str	x30, [x29, #CPU_DATA_PMF_TS0_OFFSET]
-	ldr	x29, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X29]
+	/* get_this_cpu_data clobbers x0 and x1 */
+	stp	x0, x1, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X0]
+	bl	get_this_cpu_data
+	str	x30, [x0, #CPU_DATA_PMF_TS0_OFFSET]
+	ldp	x0, x1, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X0]
 #endif
 
 	mrs	x30, esr_el3

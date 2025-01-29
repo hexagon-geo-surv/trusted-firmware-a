@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -104,16 +104,20 @@ endfunc pauth_disable_el3
  * -------------------------------------------------------------
  */
 func pauth_load_bl31_apiakey
-	/* tpidr_el3 contains the address of cpu_data structure */
-	mrs	x9, tpidr_el3
+	mov	x12, x0
+	mov	x13, x1
+	/* use per-cpu framework to get address of cpu_data object in x0 */
+	bl	get_this_cpu_data
 
 	/* Load apiakey from cpu_data */
-	ldp	x10, x11, [x9, #CPU_DATA_APIAKEY_OFFSET]
+	ldp	x10, x11, [x0, #CPU_DATA_APIAKEY_OFFSET]
 
 	/* Program instruction key A */
 	msr	APIAKeyLo_EL1, x10
 	msr	APIAKeyHi_EL1, x11
 	isb
+	mov	x0, x12
+	mov	x1, x13
 	ret
 endfunc pauth_load_bl31_apiakey
 

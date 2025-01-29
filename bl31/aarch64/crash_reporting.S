@@ -197,8 +197,13 @@ endfunc str_in_crash_buf_print_128
 	.macro prepare_crash_buf_save_x0_x1
 	/* we can corrupt this reg to free up x0 */
 	mov	sp, x0
-	/* tpidr_el3 contains the address to cpu_data structure */
-	mrs	x0, tpidr_el3
+	/* ------------------------------------------------------------------
+	 * Use per-cpu framework to get address of cpu_data object in x0
+	 * TODO This is going to clobber x1. Revisit to see if this is of
+	 * concern.
+	 * -------------------------------------------------------------------
+	 */
+	bl	get_this_cpu_data
 	/* Calculate the Crash buffer offset in cpu_data */
 	add	x0, x0, #CPU_DATA_CRASH_BUF_OFFSET
 	/* Store crash buffer address in tpidr_el3 */
@@ -322,8 +327,8 @@ no_pauth:
 	bl	asm_print_hex
 	bl	asm_print_newline
 
-	/* tpidr_el3 contains the address to cpu_data structure */
-	mrs	x0, tpidr_el3
+	/* Use per-cpu framework to get address of cpu_data object in x0 */
+	bl	get_this_cpu_data
 	/* Calculate the Crash buffer offset in cpu_data */
 	add	x0, x0, #CPU_DATA_CRASH_BUF_OFFSET
 	/* Store crash buffer address in tpidr_el3 */

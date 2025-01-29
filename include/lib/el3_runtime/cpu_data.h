@@ -9,6 +9,7 @@
 
 #ifndef __ASSEMBLER__
 #include <context.h>
+#include <lib/per_cpu/per_cpu.h>
 #endif /* __ASSEMBLER__ */
 #include <platform_def.h>	/* CACHE_WRITEBACK_GRANULE required */
 
@@ -150,9 +151,9 @@ typedef struct cpu_data {
 #if defined(IMAGE_BL31) && EL3_EXCEPTION_HANDLING
 	pe_exc_data_t ehf_data;
 #endif
-} __aligned(CACHE_WRITEBACK_GRANULE) cpu_data_t;
+} cpu_data_t;
 
-extern cpu_data_t percpu_data[PLATFORM_CORE_COUNT];
+DECLARE_PER_CPU(cpu_data_t, percpu_data);
 
 #ifdef __aarch64__
 CASSERT(CPU_DATA_CONTEXT_NUM == CPU_CONTEXT_NUM,
@@ -178,9 +179,6 @@ CASSERT(CPU_DATA_EHF_DATA_BUF_OFFSET == __builtin_offsetof
 	assert_cpu_data_ehf_stack_offset_mismatch);
 #endif
 
-CASSERT(CPU_DATA_SIZE == sizeof(cpu_data_t),
-		assert_cpu_data_size_mismatch);
-
 CASSERT(CPU_DATA_CPU_OPS_PTR == __builtin_offsetof
 		(cpu_data_t, cpu_ops_ptr),
 		assert_cpu_data_cpu_ops_ptr_offset_mismatch);
@@ -193,38 +191,27 @@ CASSERT(CPU_DATA_PMF_TS0_OFFSET == __builtin_offsetof
 
 struct cpu_data *_cpu_data_by_index(uint32_t cpu_index);
 
-#ifdef __aarch64__
-/* Return the cpu_data structure for the current CPU. */
-static inline struct cpu_data *_cpu_data(void)
-{
-	return (cpu_data_t *)read_tpidr_el3();
-}
-#else
-struct cpu_data *_cpu_data(void);
-#endif
-
 /**************************************************************************
  * APIs for initialising and accessing per-cpu data
  *************************************************************************/
 
 void init_cpu_ops(void);
 
-#define get_cpu_data(_m)			_cpu_data()->_m
-#define set_cpu_data(_m, _v)			_cpu_data()->_m = (_v)
-#define get_cpu_data_by_index(_ix, _m)		_cpu_data_by_index(_ix)->_m
-#define set_cpu_data_by_index(_ix, _m, _v)	_cpu_data_by_index(_ix)->_m = (_v)
+#define get_cpu_data(_m)			THIS_CPU_PTR(percpu_data)->_m
+#define set_cpu_data(_m, _v)			THIS_CPU_PTR(percpu_data)->_m = (_v)
+#define get_cpu_data_by_index(_ix, _m)		FOR_CPU_PTR(percpu_data, _ix)->_m
+#define set_cpu_data_by_index(_ix, _m, _v)	FOR_CPU_PTR(percpu_data, _ix)->_m = (_v)
 /* ((cpu_data_t *)0)->_m is a dummy to get the sizeof the struct member _m */
 #define flush_cpu_data(_m)	   flush_dcache_range((uintptr_t)	  \
-						&(_cpu_data()->_m), \
+						&(THIS_CPU_PTR(percpu_data)->_m), \
 						sizeof(((cpu_data_t *)0)->_m))
 #define inv_cpu_data(_m)	   inv_dcache_range((uintptr_t)	  	  \
-						&(_cpu_data()->_m), \
+						&(THIS_CPU_PTR(percpu_data)->_m), \
 						sizeof(((cpu_data_t *)0)->_m))
 #define flush_cpu_data_by_index(_ix, _m)	\
 				   flush_dcache_range((uintptr_t)	  \
-					 &(_cpu_data_by_index(_ix)->_m),  \
+					 &(FOR_CPU_PTR(percpu_data, _ix)->_m),  \
 						sizeof(((cpu_data_t *)0)->_m))
-
 
 #endif /* __ASSEMBLER__ */
 #endif /* CPU_DATA_H */
