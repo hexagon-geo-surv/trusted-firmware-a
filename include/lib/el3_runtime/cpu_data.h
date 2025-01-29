@@ -7,6 +7,9 @@
 #ifndef CPU_DATA_H
 #define CPU_DATA_H
 
+#ifndef __ASSEMBLER__
+#include <context.h>
+#endif /* __ASSEMBLER__ */
 #include <platform_def.h>	/* CACHE_WRITEBACK_GRANULE required */
 
 #include <bl31/ehf.h>
@@ -109,14 +112,6 @@
 		(cpu_data_t, platform_cpu_data)
 #endif
 
-typedef enum context_pas {
-	CPU_CONTEXT_SECURE = 0,
-	CPU_CONTEXT_NS,
-#if ENABLE_RME
-	CPU_CONTEXT_REALM,
-#endif
-	CPU_CONTEXT_NUM
-} context_pas_t;
 
 /*******************************************************************************
  * Function & variable prototypes
@@ -208,41 +203,16 @@ static inline struct cpu_data *_cpu_data(void)
 struct cpu_data *_cpu_data(void);
 #endif
 
-/*
- * Returns the index of the cpu_context array for the given security state.
- * All accesses to cpu_context should be through this helper to make sure
- * an access is not out-of-bounds. The function assumes security_state is
- * valid.
- */
-static inline context_pas_t get_cpu_context_index(uint32_t security_state)
-{
-	if (security_state == SECURE) {
-		return CPU_CONTEXT_SECURE;
-	} else {
-#if ENABLE_RME
-		if (security_state == NON_SECURE) {
-			return CPU_CONTEXT_NS;
-		} else {
-			assert(security_state == REALM);
-			return CPU_CONTEXT_REALM;
-		}
-#else
-		assert(security_state == NON_SECURE);
-		return CPU_CONTEXT_NS;
-#endif
-	}
-}
-
 /**************************************************************************
  * APIs for initialising and accessing per-cpu data
  *************************************************************************/
 
 void init_cpu_ops(void);
 
-#define get_cpu_data(_m)		   _cpu_data()->_m
-#define set_cpu_data(_m, _v)		   _cpu_data()->_m = (_v)
-#define get_cpu_data_by_index(_ix, _m)	   _cpu_data_by_index(_ix)->_m
-#define set_cpu_data_by_index(_ix, _m, _v) _cpu_data_by_index(_ix)->_m = (_v)
+#define get_cpu_data(_m)			_cpu_data()->_m
+#define set_cpu_data(_m, _v)			_cpu_data()->_m = (_v)
+#define get_cpu_data_by_index(_ix, _m)		_cpu_data_by_index(_ix)->_m
+#define set_cpu_data_by_index(_ix, _m, _v)	_cpu_data_by_index(_ix)->_m = (_v)
 /* ((cpu_data_t *)0)->_m is a dummy to get the sizeof the struct member _m */
 #define flush_cpu_data(_m)	   flush_dcache_range((uintptr_t)	  \
 						&(_cpu_data()->_m), \
