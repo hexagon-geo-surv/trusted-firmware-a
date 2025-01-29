@@ -17,8 +17,14 @@
 #include <lib/el3_runtime/context_el1.h>
 #endif /* (CTX_INCLUDE_EL2_REGS && IMAGE_BL31) */
 
-#include <lib/el3_runtime/cpu_data.h>
+#ifndef __ASSEMBLER__
+#include <assert.h>
+#endif /* __ASSEMBLER__ */
+
+#include <common/ep_info.h>
+#include <lib/el3_runtime/context_el2.h>
 #include <lib/el3_runtime/simd_ctx.h>
+#include <lib/psci/psci.h>
 #include <lib/utils_def.h>
 
 /*******************************************************************************
@@ -271,6 +277,15 @@ typedef struct cpu_context {
 
 } cpu_context_t;
 
+typedef enum context_pas {
+	CPU_CONTEXT_SECURE = 0,
+	CPU_CONTEXT_NS,
+#if ENABLE_RME
+	CPU_CONTEXT_REALM,
+#endif
+	CPU_CONTEXT_NUM
+} context_pas_t;
+
 /*
  * Per-World Context.
  * It stores registers whose values can be shared across CPUs.
@@ -280,7 +295,32 @@ typedef struct per_world_context {
 	uint64_t ctx_mpam3_el3;
 } per_world_context_t;
 
-extern per_world_context_t per_world_context[CPU_DATA_CONTEXT_NUM];
+extern per_world_context_t per_world_context[CPU_CONTEXT_NUM];
+
+/*
+ * Returns the index of the cpu_context array for the given security state.
+ * All accesses to cpu_context should be through this helper to make sure
+ * an access is not out-of-bounds. The function assumes security_state is
+ * valid.
+ */
+static inline context_pas_t get_cpu_context_index(uint32_t security_state)
+{
+	if (security_state == SECURE) {
+		return CPU_CONTEXT_SECURE;
+	} else {
+#if ENABLE_RME
+		if (security_state == NON_SECURE) {
+			return CPU_CONTEXT_NS;
+		} else {
+			assert(security_state == REALM);
+			return CPU_CONTEXT_REALM;
+		}
+#else
+		assert(security_state == NON_SECURE);
+		return CPU_CONTEXT_NS;
+#endif
+	}
+}
 
 /* Macros to access members of the 'cpu_context_t' structure */
 #define get_el3state_ctx(h)	(&((cpu_context_t *) h)->el3state_ctx)
