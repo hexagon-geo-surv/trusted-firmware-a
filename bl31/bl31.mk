@@ -46,6 +46,7 @@ BL31_SOURCES		+=	bl31/bl31_main.c				\
 				services/arm_arch_svc/arm_arch_svc_setup.c	\
 				services/std_svc/std_svc_setup.c		\
 				lib/el3_runtime/simd_ctx.c			\
+				lib/per_cpu/per_cpu.S				\
 				${PSCI_LIB_SOURCES}				\
 				${SPMD_SOURCES}					\
 				${SPM_MM_SOURCES}				\

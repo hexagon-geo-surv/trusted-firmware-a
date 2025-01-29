@@ -132,6 +132,10 @@ IMPORT_SYM(uintptr_t, __BL2U_END__,		BL2U_END);
 #elif defined(IMAGE_BL31)
 IMPORT_SYM(uintptr_t, __BL31_START__,		BL31_START);
 IMPORT_SYM(uintptr_t, __BL31_END__,		BL31_END);
+IMPORT_SYM(uintptr_t, __PER_CPU_START__,	PER_CPU_START);
+IMPORT_SYM(uintptr_t, __PER_CPU_SIZE__,		PER_CPU_SIZE);
+IMPORT_SYM(uintptr_t, __PER_CPU_START_UNIT__,	PER_CPU_START_UNIT);
+IMPORT_SYM(uintptr_t, __PER_CPU_END_UNIT_CLA__,	PER_CPU_END_UNIT_CLA);
 #elif defined(IMAGE_BL32)
 IMPORT_SYM(uintptr_t, __BL32_END__,		BL32_END);
 #elif defined(IMAGE_RMM)
