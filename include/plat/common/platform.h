@@ -359,6 +359,7 @@ void bl31_plat_arch_setup(void);
 void bl31_platform_setup(void);
 void bl31_plat_runtime_setup(void);
 struct entry_point_info *bl31_plat_get_next_image_ep_info(uint32_t type);
+struct entry_point_info *bl31_plat_get_next_update_image_ep_info(uint32_t type);
 
 /*******************************************************************************
  * Mandatory PSCI functions (BL31)

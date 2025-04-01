@@ -37,6 +37,7 @@ static entry_point_info_t bl33_image_ep_info;
 
 #if ENABLE_RME
 static entry_point_info_t rmm_image_ep_info;
+static entry_point_info_t rmm_secondary_image_ep_info;
 #if (RME_GPT_BITLOCK_BLOCK == 0)
 #define BITLOCK_BASE	UL(0)
 #define BITLOCK_SIZE	UL(0)
@@ -144,6 +145,23 @@ struct entry_point_info *bl31_plat_get_next_image_ep_info(uint32_t type)
 		return next_image_info;
 	else
 		return NULL;
+}
+
+/*******************************************************************************
+ * Return a pointer to the 'entry_point_info' structure of the next image to be
+ * activated, mainly used during LFA flow for the security state specified.
+ * A NULL pointer is returned if the image does not exist.
+ ******************************************************************************/
+struct entry_point_info *bl31_plat_get_next_update_image_ep_info(uint32_t type)
+{
+#if ENABLE_RME
+	if (type == REALM) {
+		rmm_secondary_image_ep_info.pc = RMM_BASE + RMM_BANK_SIZE;
+		return &rmm_secondary_image_ep_info;
+	}
+#endif /* ENABLE_RME */
+
+	return NULL;
 }
 
 /*******************************************************************************
