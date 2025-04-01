@@ -786,6 +786,14 @@ NXP SoC Part S32G274A and its platform port
 :|F|: include/drivers/nxp/console/linflex.h
 :|F|: plat/nxp/s32
 
+Per-cpu Framework
+^^^^^^^^^^^^^^^^^
+:|M|: Rohit Mathew <rohit.mathew@arm.com>
+:|G|: `rohit-arm`_
+:|M|: Sammit Joshi <sammit.joshi@arm.com>
+:|G|: `sammit-arm`_
+:|F|: include/lib/per_cpu
+
 QEMU platform port
 ^^^^^^^^^^^^^^^^^^
 :|M|: Jens Wiklander <jens.wiklander@linaro.org>
@@ -1115,6 +1123,7 @@ Conventional Changelog Extensions
 .. _rohit-arm: https://github.com/rohit-arm
 .. _o-tarhunakov: https://github.com/o-tarhunakov
 .. _rutigl: https://github.com/rutigl
+.. _sammit-arm: https://github.com/sammit-arm
 .. _sandrine-bailleux-arm: https://github.com/sandrine-bailleux-arm
 .. _shawnguo2: https://github.com/shawnguo2
 .. _sieumunt: https://github.com/sieumunt
