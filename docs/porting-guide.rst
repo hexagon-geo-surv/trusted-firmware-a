@@ -3771,6 +3771,64 @@ Measured Boot Platform Interface
 Enabling the MEASURED_BOOT flag adds extra platform requirements. Please refer
 to :ref:`Measured Boot Design` for more details.
 
+Live Firmware Activation Interface
+----------------------------------
+
+Function : plat_get_lfa_image_info()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    Argument : uint32_t
+    Argument : const uuid_t *
+    Return   : uint32_t
+
+This platform API retrieves the image ID of the requested image based
+on its index and provides its corresponding UUID.
+The first parameter specifies the image index, and the second
+parameter is a pointer to the UUID. Return UINT32_MAX(-1) if the
+requested image is not found.
+
+Function : is_plat_fw_update_avail()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    Argument : uint32_t
+    Return   : bool
+
+This platform API checks if the specified image, identified
+by its `image_id`, is available for activation. It returns
+True if available, otherwise, it returns False.
+The first parameter is the `image_id` of the image whose
+availability needs to be checked.
+
+Function : plat_lfa_load_auth_image()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    Argument : uint32_t
+    Return   : int
+
+It is upto the platform to do the load and authentication
+of the given component and return appropriate standard errors
+on load and authentication failures.
+The first parameter is the `image_id` which needs to be loaded
+and authenticated by the platform.
+
+Function : bl31_plat_get_next_update_image_ep_info()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    Argument : uint32_t
+    Return   : entry_point_info *
+
+This function is very similar to the ``bl31_plat_get_next_image_ep_info()``
+but it is used to retrieve the ``entry_point_info`` of the updated image
+that needs to be activated in Live Firmware Activation flow.
+
 --------------
 
 *Copyright (c) 2013-2025, Arm Limited and Contributors. All rights reserved.*
