@@ -31,12 +31,25 @@
 	TYPE NAME						\
 	__section(PER_CPU_SECTION_NAME)
 
+/* Declare the first per-cpu object in the entire per-cpu region */
+#define DECLARE_PER_CPU_BASE(TYPE, NAME)			\
+	DECLARE_PER_CPU(TYPE, NAME)
+
+/* Define the first per-cpu object in the entire per-cpu region */
+#define DEFINE_PER_CPU_BASE(TYPE, NAME)				\
+	TYPE NAME __section(".per_cpu_base");			\
+	char __unique_per_cpu_anchor_guard __attribute__((used))
+
 /* Get a pointer to a per-CPU object for a given CPU */
 #define FOR_CPU_PTR(NAME, CPU) __extension__			\
 	((__typeof__(&NAME))					\
 	(plat_get_node_base(CPU) +				\
 	PER_CPU_OFFSET((uintptr_t)&NAME) +			\
 	((CPU % PER_CPU_NODE_CORE_COUNT) * PER_CPU_UNIT_SIZE)))
+
+/* Get a pointer to the base per-cpu object for a given CPU */
+#define BASE_FOR_CPU_PTR(NAME, CPU) __extension__		\
+	FOR_CPU_PTR(NAME, CPU)
 
 /* Get a per-CPU object value for a given CPU */
 #define FOR_CPU(NAME, CPU) __extension__			\
@@ -51,6 +64,13 @@
 		((__typeof__(&NAME))				\
 		(read_tpidr_el3() +				\
 		PER_CPU_OFFSET((uintptr_t)&NAME)));		\
+	})
+
+/* Get a pointer to the base per-cpu object for the current CPU */
+#define BASE_THIS_CPU_PTR(NAME) __extension__			\
+	({							\
+		((__typeof__(&NAME))				\
+		(read_tpidr_el3()));				\
 	})
 
 /* Get a per-CPU object for the current CPU (lvalue-safe) */

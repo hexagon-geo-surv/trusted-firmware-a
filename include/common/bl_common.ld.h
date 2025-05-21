@@ -234,6 +234,7 @@
 	.per_cpu (NOLOAD) : ALIGN(CACHE_WRITEBACK_GRANULE) {		\
 	__PER_CPU_START__ = .;						\
 	__PER_CPU_START_UNIT__ = .;					\
+	KEEP(*(.per_cpu_base))						\
 	*(SORT_BY_ALIGNMENT(.per_cpu*))					\
 	__PER_CPU_END_UNIT__ = .;					\
 	. = ALIGN(CACHE_WRITEBACK_GRANULE);				\

@@ -13,6 +13,33 @@
 
 
 /* -----------------------------------------------------------------
+ *
+ * cpu_data_t * base_this_cpu_ptr(void)
+ *
+ * Return the base per-cpu object pointer for the calling CPU
+ *
+ * This can be called without a valid stack.
+ * Clobbers: None
+ * -----------------------------------------------------------------
+ */
+.macro base_this_cpu_ptr _reg
+	mrs \_reg, tpidr_el3
+.endm
+
+/* -----------------------------------------------------------------
+ * cpu_data_t * base_for_cpu_ptr(uint32_t cpu_index)
+ *
+ * Return the base per-cpu object pointer for a given cpu index
+ *
+ * This can be called without a valid stack.
+ * clobbers: x0 - x3
+ * -----------------------------------------------------------------
+ */
+.macro base_for_cpu_ptr _label, _cpu
+	for_cpu_ptr \_label, \_cpu
+.endm
+
+/* -----------------------------------------------------------------
  *	Expects object name to be passed in _label.
  *      Returns objects address in x0.
  *	Clobbers: x0 - x2
