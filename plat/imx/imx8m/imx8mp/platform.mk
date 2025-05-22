@@ -141,6 +141,12 @@ $(ROTPK_HASH): $(ROT_KEY) | $$(@D)/
 	${OPENSSL_BIN_PATH}/openssl dgst -sha256 -binary > $@ 2>/dev/null
 endif
 
+ENABLE_PSCI_STAT	:=	1
+ENABLE_PMF      	:=	1
+ifeq (${ENABLE_PMF},1)
+BL31_SOURCES		+=	lib/pmf/pmf_smc.c
+endif
+
 ENABLE_PIE		:=	1
 USE_COHERENT_MEM	:=	1
 RESET_TO_BL31		:=	1
