@@ -5,7 +5,6 @@
 #
 
 PSCI_LIB_SOURCES	:=	lib/el3_runtime/cpu_data_array.c	\
-				lib/el3_runtime/${ARCH}/cpu_data.S	\
 				lib/el3_runtime/${ARCH}/context_mgmt.c	\
 				lib/cpus/${ARCH}/cpu_helpers.S		\
 				lib/cpus/errata_report.c		\
@@ -22,6 +21,10 @@ PSCI_LIB_SOURCES	:=	lib/el3_runtime/cpu_data_array.c	\
 
 ifeq (${ARCH}, aarch64)
 PSCI_LIB_SOURCES	+=	lib/el3_runtime/aarch64/context.S
+endif
+
+ifeq (${ARCH}, aarch32)
+PSCI_LIB_SOURCES	+=	lib/el3_runtime/${ARCH}/cpu_data.S
 endif
 
 ifeq (${USE_COHERENT_MEM}, 1)
