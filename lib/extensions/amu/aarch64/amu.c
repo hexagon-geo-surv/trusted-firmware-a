@@ -18,8 +18,9 @@
 #include <lib/extensions/amu.h>
 #include <lib/utils_def.h>
 #include <platform_def.h>
+#include <lib/per_cpu/per_cpu.h>
 
-amu_regs_t amu_ctx[PLATFORM_CORE_COUNT];
+DEFINE_PER_CPU(amu_regs_t, amu_ctx);
 
 static inline uint8_t read_amcgcr_el0_cg1nc(void)
 {
@@ -108,7 +109,7 @@ static void *amu_context_save(const void *arg)
 	}
 
 	unsigned int core_pos = *(unsigned int *)arg;
-	amu_regs_t *ctx = &amu_ctx[core_pos];
+	amu_regs_t *ctx = FOR_CPU_PTR(amu_ctx, core_pos);
 
 	/* disable all counters so we can write them safely later */
 	write_amcntenclr0_el0(AMCNTENCLR0_EL0_Pn_MASK);
@@ -192,7 +193,7 @@ static void *amu_context_restore(const void *arg)
 	}
 
 	unsigned int core_pos = *(unsigned int *)arg;
-	amu_regs_t *ctx = &amu_ctx[core_pos];
+	amu_regs_t *ctx = FOR_CPU_PTR(amu_ctx, core_pos);
 
 	write_amevcntr00_el0(read_amu_grp0_ctx_reg(ctx, 0));
 	write_amevcntr01_el0(read_amu_grp0_ctx_reg(ctx, 1));
