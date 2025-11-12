@@ -344,6 +344,20 @@ MEASURED_BOOT
 					MT_MEMORY | MT_RW | MT_SECURE)
 #endif /* (SPD_tspd || SPD_opteed || SPD_spmd) && MEASURED_BOOT */
 
+#if LFA_SUPPORT
+#define ARM_MAP_LFA_RELOCATABLE_CODE \
+				MAP_REGION_FLAT(			\
+					BL31_LIMIT - (2 * PAGE_SIZE),	\
+					PAGE_SIZE,			\
+					MT_CODE | EL3_PAS)
+
+#define ARM_MAP_LFA_RELOCATABLE_DATA \
+				MAP_REGION_FLAT(			\
+					BL31_LIMIT - PAGE_SIZE,		\
+					PAGE_SIZE,			\
+					MT_MEMORY | MT_RW | EL3_PAS)
+#endif /* LFA_SUPPORT */
+
 #if ENABLE_RME
 /*
  * We add the EL3_RMM_SHARED size to RMM mapping to map the region as a block.
