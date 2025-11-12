@@ -178,6 +178,15 @@ uint64_t xlat_desc(const xlat_ctx_t *ctx, uint32_t attr,
 		desc |= xlat_arch_regime_get_xn_desc(ctx->xlat_regime);
 
 	} else { /* Normal memory */
+#if LFA_SUPPORT
+		/*
+		 * LFA needs in a specific case (BL31 self-update) to have
+		 * memory that is read-write and execute at the same time.
+		 */
+		if ((attr & MT_EXECUTE_NEVER) != 0U) {
+			desc |= xlat_arch_regime_get_xn_desc(ctx->xlat_regime);
+		}
+#else /* LFA_SUPPORT */
 		/*
 		 * Always map read-write normal memory as execute-never.
 		 * This library assumes that it is used by software that does
@@ -199,6 +208,7 @@ uint64_t xlat_desc(const xlat_ctx_t *ctx, uint32_t attr,
 		if (((attr & MT_RW) != 0U) || ((attr & MT_EXECUTE_NEVER) != 0U)) {
 			desc |= xlat_arch_regime_get_xn_desc(ctx->xlat_regime);
 		}
+#endif /* LFA_SUPPORT */
 
 		shareability_type = MT_SHAREABILITY(attr);
 		if (mem_type == MT_MEMORY) {

@@ -642,3 +642,110 @@ int xlat_change_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 
 	return 0;
 }
+
+#if LFA_SUPPORT
+static uint64_t xlat_desc_lfa(const xlat_ctx_t *ctx, uint32_t attr,
+		   unsigned long long addr_pa, unsigned int level)
+{
+	uint64_t desc;
+	uint32_t shareability_type;
+
+	/* Make sure that the granularity is fine enough to map this address. */
+	assert((addr_pa & XLAT_BLOCK_MASK(level)) == 0U);
+	assert(ctx->xlat_regime == EL3_REGIME);
+
+	desc = addr_pa | LOWER_ATTRS(ACCESS_FLAG) | PAGE_DESC;
+	desc |= xlat_arch_get_pas(attr);
+
+	/*
+	 * Deduce other fields of the descriptor based on the MT_RW memory
+	 * region attributes.
+	 */
+	desc |= ((attr & MT_RW) != 0U) ? LOWER_ATTRS(AP_RW) : LOWER_ATTRS(AP_RO);
+
+	/* Only allow this at EL3. */
+	desc |= LOWER_ATTRS(AP_ONE_VA_RANGE_RES1);
+
+	/*
+	 * LFA needs in a specific case (BL31 self-update) to have
+	 * memory that is read-write and execute at the same time.
+	 */
+	if ((attr & MT_EXECUTE_NEVER) != 0U) {
+		desc |= xlat_arch_regime_get_xn_desc(ctx->xlat_regime);
+	}
+
+	shareability_type = MT_SHAREABILITY(attr);
+	desc |= LOWER_ATTRS(ATTR_IWBWA_OWBWA_NTR_INDEX);
+	if (shareability_type == MT_SHAREABILITY_NSH) {
+		desc |= LOWER_ATTRS(NSH);
+	} else if (shareability_type == MT_SHAREABILITY_OSH) {
+		desc |= LOWER_ATTRS(OSH);
+	} else {
+		desc |= LOWER_ATTRS(ISH);
+	}
+
+	/*
+	 * Set GP bit for block and page code entries
+	 * if BTI mechanism is implemented.
+	 */
+	if (is_feat_bti_supported() &&
+		((attr & (MT_TYPE_MASK | MT_RW |
+		MT_EXECUTE_NEVER)) == MT_CODE)) {
+		desc |= GP;
+	}
+
+	return desc;
+}
+
+int xlat_change_mem_attributes_ctx_lfa(const xlat_ctx_t *ctx, uintptr_t base_va,
+				   size_t size, uint32_t attr)
+{
+	assert(ctx != NULL);
+	assert(ctx->initialized);
+
+	if (!IS_PAGE_ALIGNED(base_va) || (size == 0) || ((size % PAGE_SIZE) != 0U)) {
+		ERROR("Illegal attribute change requested!\n");
+		return -1;
+	}
+
+	size_t pages_count = size / PAGE_SIZE;
+
+	for (unsigned int i = 0U; i < pages_count; ++i) {
+
+		uint32_t old_attr = 0U, new_attr;
+		uint64_t *entry = NULL;
+		unsigned int level = 0U;
+		unsigned long long addr_pa = 0ULL;
+
+		(void)xlat_get_mem_attributes_internal(ctx, base_va, &old_attr,
+					    &entry, &addr_pa, &level);
+
+		/* Clean the old attributes and update with new ones. */
+		new_attr = old_attr & ~(MT_RW | MT_EXECUTE_NEVER | MT_USER);
+		new_attr |= attr & (MT_RW | MT_EXECUTE_NEVER | MT_USER);
+
+		/* We have to write and invalid descriptor before updating. */
+		*entry = INVALID_DESC;
+#if !HW_ASSISTED_COHERENCY
+		dccvac((uintptr_t)entry);
+#endif
+		/* Invalidate any cached copy of this mapping in the TLBs. */
+		xlat_arch_tlbi_va(base_va, ctx->xlat_regime);
+
+		/* Ensure completion of the invalidation. */
+		xlat_arch_tlbi_va_sync();
+
+		/* Write new descriptor */
+		*entry = xlat_desc_lfa(ctx, new_attr, addr_pa, level);
+#if !HW_ASSISTED_COHERENCY
+		dccvac((uintptr_t)entry);
+#endif
+		base_va += PAGE_SIZE;
+	}
+
+	/* Ensure that the last descriptor written is seen by the system. */
+	dsbish();
+
+	return 0;
+}
+#endif /* LFA_SUPPORT */
