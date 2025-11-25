@@ -594,6 +594,12 @@ FVP_TRUSTED_SRAM_SIZE == 512
  */
 #define PLAT_LFA_STORE_BASE			UL(0xFB000000)
 #define PLAT_LFA_STORE_SIZE			SZ_16M
+
+/*
+ * The errata section is padded to allow for growth without affecting the rest
+ * of the binary.
+ */
+#define PLAT_LFA_ERRATA_SECTION_SIZE		U(0x1000)
 #endif /* LFA_SUPPORT */
 
 #endif /* PLATFORM_DEF_H */

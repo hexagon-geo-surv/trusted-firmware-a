@@ -7,6 +7,7 @@
 #include <common/bl_common.ld.h>
 #include <lib/per_cpu/per_cpu_defs.h>
 #include <lib/xlat_tables/xlat_tables_defs.h>
+#include <platform_def.h>
 
 OUTPUT_FORMAT(PLATFORM_LINKER_FORMAT)
 OUTPUT_ARCH(PLATFORM_LINKER_ARCH)
@@ -60,6 +61,27 @@ SECTIONS {
         __TEXT_END_UNALIGNED__ = .;
 
         . = ALIGN(PAGE_SIZE);
+
+#if LFA_SUPPORT
+        /*
+         * When LFA is enabled we create this .text subsection to keep the CPU
+         * lib code in so it can grow without affecting the rest of the code or
+         * data. This allows to a reasonable degree of certainty that minor
+         * errata fixes can be applied with live activation.
+         */
+        __ERRATA_START__ = .;
+        *(.errata*)
+        __ERRATA_UNPADDED_END__ = .;
+
+        FILL(0x00);
+        . += (( PLAT_LFA_ERRATA_SECTION_SIZE > (. - __ERRATA_START__) )
+            ?  ( PLAT_LFA_ERRATA_SECTION_SIZE - (. - __ERRATA_START__) )
+            :  0);
+
+        . = ALIGN(PAGE_SIZE);
+
+        __ERRATA_END__ = .;
+#endif
 
         __TEXT_END__ = .;
     } >RAM
