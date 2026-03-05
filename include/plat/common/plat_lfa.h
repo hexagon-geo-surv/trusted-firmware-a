@@ -22,5 +22,6 @@ bool is_plat_lfa_activation_pending(uint32_t lfa_component_id);
 int plat_lfa_cancel(uint32_t lfa_component_id);
 int plat_lfa_load_auth_image(uint32_t lfa_component_id);
 int plat_lfa_notify_activate(uint32_t lfa_component_id);
+uint64_t plat_lfa_mailbox_base(void);
 
 #endif /* PLAT_LFA_H */

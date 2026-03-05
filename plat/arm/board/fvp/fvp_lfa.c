@@ -74,3 +74,7 @@ int plat_lfa_notify_activate(uint32_t lfa_component_id)
 {
 	return 0;
 }
+
+uint64_t plat_lfa_mailbox_base(void) {
+	return PLAT_ARM_TRUSTED_MAILBOX_BASE;
+}

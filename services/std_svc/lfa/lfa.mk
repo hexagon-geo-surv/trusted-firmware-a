@@ -7,7 +7,9 @@
 LFA_SOURCES	+=	$(addprefix services/std_svc/lfa/, \
 			  lfa_main.c \
 			  bl31_lfa.c \
-			  lfa_holding_pen.c)
+			  lfa_holding_pen.c \
+			  lfa_reset.c \
+			  lfa_relocatable.S)
 
 ifeq (${ENABLE_RME}, 1)
 LFA_SOURCES	+=	services/std_svc/rmmd/rmmd_rmm_lfa.c
