@@ -23,7 +23,7 @@ static int lfa_rmm_activate(struct lfa_component_status *activation,
 {
 	int ret = LFA_SUCCESS;
 
-	if (lfa_holding_start()) {
+	if (lfa_holding_start(false)) {
 		/* Leader CPU */
 		INFO("LFA_ACTIVATE: Last CPU proceed with activation\n");
 
