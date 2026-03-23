@@ -7,16 +7,22 @@
 #include <common/bl_common.ld.h>
 #include <lib/per_cpu/per_cpu_defs.h>
 #include <lib/xlat_tables/xlat_tables_defs.h>
+#include <platform_def.h>
 
 OUTPUT_FORMAT(PLATFORM_LINKER_FORMAT)
 OUTPUT_ARCH(PLATFORM_LINKER_ARCH)
 ENTRY(bl31_entrypoint)
 
 MEMORY {
-    RAM (rwx): ORIGIN = BL31_BASE, LENGTH = BL31_LIMIT - BL31_BASE
+
+    RAM (rwx): ORIGIN = BL31_BASE, LENGTH = BL31_LIMIT - BL31_BASE - (LFA_SUPPORT * (2 * PAGE_SIZE))
+
+#if LFA_SUPPORT
+    LFA (rwx): ORIGIN = BL31_LIMIT - (2 * PAGE_SIZE), LENGTH = (2 * PAGE_SIZE)
+#endif
 
 #if SEPARATE_NOBITS_REGION
-    NOBITS (rw!a): ORIGIN = BL31_NOBITS_BASE, LENGTH = BL31_NOBITS_LIMIT - BL31_NOBITS_BASE
+    NOBITS (rw!a): ORIGIN = BL31_NOBITS_BASE, LENGTH = BL31_NOBITS_LIMIT - BL31_NOBITS_BASE - (LFA_SUPPORT * (2 * PAGE_SIZE))
 #else /* SEPARATE_NOBITS_REGION */
 #   define NOBITS RAM
 #endif /* SEPARATE_NOBITS_REGION */
@@ -55,6 +61,27 @@ SECTIONS {
         __TEXT_END_UNALIGNED__ = .;
 
         . = ALIGN(PAGE_SIZE);
+
+#if LFA_SUPPORT
+        /*
+         * When LFA is enabled we create this .text subsection to keep the CPU
+         * lib code in so it can grow without affecting the rest of the code or
+         * data. This allows to a reasonable degree of certainty that minor
+         * errata fixes can be applied with live activation.
+         */
+        __ERRATA_START__ = .;
+        *(.errata*)
+        __ERRATA_UNPADDED_END__ = .;
+
+        FILL(0x00);
+        . += (( PLAT_LFA_ERRATA_SECTION_SIZE > (. - __ERRATA_START__) )
+            ?  ( PLAT_LFA_ERRATA_SECTION_SIZE - (. - __ERRATA_START__) )
+            :  0);
+
+        . = ALIGN(PAGE_SIZE);
+
+        __ERRATA_END__ = .;
+#endif
 
         __TEXT_END__ = .;
     } >RAM
@@ -143,6 +170,25 @@ SECTIONS {
     . = LOADADDR(.spm_shim_exceptions) + SIZEOF(.spm_shim_exceptions);
 #endif /* SPM_MM || (SPMC_AT_EL3 && SPMC_AT_EL3_SEL0_SP) */
 
+#if LFA_SUPPORT
+    .lfa_relocatable : ALIGN(PAGE_SIZE) {
+        __LFA_RELOCATABLE_CODE_START__ = .;
+        *(.lfa_relocatable_code*)
+        __LFA_RELOCATABLE_CODE_END__ = .;
+        . = ALIGN(PAGE_SIZE);
+        __LFA_RELOCATABLE_DATA_START__ = .;
+        *(.lfa_relocatable_data*)
+        . = ALIGN(PAGE_SIZE);
+        __LFA_RELOCATABLE_DATA_END__ = .;
+        __LFA_RELOCATABLE_LIMIT__ = .;
+    } >LFA AT> RAM
+
+    PROVIDE(__LFA_RELOCATABLE_LMA__ = LOADADDR(.lfa_relocatable));
+
+    . = LOADADDR(.lfa_relocatable) + SIZEOF(.lfa_relocatable);
+    ASSERT(__LFA_RELOCATABLE_LIMIT__ <= BL31_LIMIT, "__LFA_RELOCATABLE_END__ has exceeded its limit.")
+#endif /* LFA_SUPPORT */
+
 #if SEPARATE_RWDATA_REGION
     . = BL31_RWDATA_BASE;
     ASSERT(BL31_RWDATA_BASE == ALIGN(PAGE_SIZE),
@@ -189,7 +235,7 @@ SECTIONS {
 #endif /* SEPARATE_RWDATA_REGION */
     __BL31_END__ = .;
 
-    ASSERT(. <= BL31_LIMIT, "BL31 image has exceeded its limit.")
+    ASSERT(. <= BL31_LIMIT - (LFA_SUPPORT * (2 * PAGE_SIZE)), "BL31 image has exceeded its limit.")
 
     . = BL31_NOBITS_BASE;
 
@@ -237,7 +283,7 @@ SECTIONS {
 #if SEPARATE_NOBITS_REGION
     __NOBITS_END__ = .;
 
-    ASSERT(. <= BL31_NOBITS_LIMIT, "BL31 NOBITS region has exceeded its limit.")
+    ASSERT(. <= BL31_NOBITS_LIMIT - (LFA_SUPPORT * (2 * PAGE_SIZE)), "BL31 NOBITS region has exceeded its limit.")
 #else /* SEPARATE_NOBITS_REGION */
     /*
      * Define a linker symbol to mark the end of the RW memory area for this

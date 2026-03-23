@@ -10,14 +10,22 @@
 #include <lib/psci/psci_lib.h>
 #include <lib/spinlock.h>
 #include <lib/utils_def.h>
+#include <lib/xlat_tables/xlat_tables_v2.h>
 #include <plat/common/platform.h>
 #include <services/lfa_holding_pen.h>
 
 #include <platform_def.h>
 
+/* These symbols are needed so the relocatable code can be loaded. */
+IMPORT_SYM(uintptr_t, __LFA_RELOCATABLE_CODE_START__,	LFA_RELOCATABLE_CODE_START);
+IMPORT_SYM(uintptr_t, __LFA_RELOCATABLE_CODE_END__,	LFA_RELOCATABLE_CODE_END);
+IMPORT_SYM(uintptr_t, __LFA_RELOCATABLE_LMA__,		LFA_RELOCATABLE_LMA);
+IMPORT_SYM(uintptr_t, __LFA_RELOCATABLE_DATA_START__,	LFA_RELOCATABLE_DATA_START);
+IMPORT_SYM(uintptr_t, __LFA_RELOCATABLE_DATA_END__,	LFA_RELOCATABLE_DATA_END);
+
 static spinlock_t holding_lock;
 static spinlock_t activation_lock;
-static uint32_t activation_count;
+static volatile uint32_t activation_count;
 static enum lfa_retc activation_status;
 
 /**
@@ -39,32 +47,56 @@ static enum lfa_retc activation_status;
  * receive `false` and will wait in `lfa_holding_wait()` until activation
  * is complete.
  *
+ * In the case of a BL31 live activation, this function can also initialize the
+ * relocatable holding pen.
+ *
  * @return `true` for the last CPU, `false` for all others.
  */
-bool lfa_holding_start(void)
-{
-	bool status;
-	unsigned int no_of_cpus;
+bool lfa_holding_start(bool relocate) {
+	unsigned int no_of_cpus = psci_num_cpus_running_on_safe(plat_my_core_pos());
 
+	/*
+	 * This lock ensures only one CPU uses the activation_count
+	 * variable at a time.
+	 */
 	spin_lock(&activation_lock);
 
+	/* First CPU to arrive locks the holding pen. */
 	if (activation_count == 0U) {
-		/* First CPU locks holding lock */
 		spin_lock(&holding_lock);
 	}
 
 	activation_count += 1U;
 
-	no_of_cpus = psci_num_cpus_running_on_safe(plat_my_core_pos());
-	status = (activation_count == no_of_cpus);
-	if (!status) {
-		VERBOSE("Hold, %d CPU left\n",
-			 PLATFORM_CORE_COUNT - activation_count);
-	}
-
+	/* Release the lock once count is updated. */
 	spin_unlock(&activation_lock);
 
-	return status;
+	/* If we are not using a relocated holding pen, then we're done. */
+	if (!relocate) {
+		return (activation_count == no_of_cpus);
+	}
+
+	/* Last CPU to reach this point handles the activation. */
+	if (activation_count == no_of_cpus) {
+		VERBOSE("Core %d performing activation.\n", plat_my_core_pos());
+
+		/*
+		 * Only one core will load the relocatable code module and
+		 * acquire the relocatable lock, then release the rest of the
+		 * cores which will then wait for us to release the relocatable
+		 * lock once the activation is complete.
+		 */
+		 lfa_load_relocatable();
+		 lfa_r_holding_lock(&lfa_r_holding_lock_var);
+		 spin_unlock(&holding_lock);
+		 return true;
+
+	} else {
+		/* Wait until we are released by the primary core. */
+		spin_lock(&holding_lock);
+		spin_unlock(&holding_lock);
+		return false;
+	}
 }
 
 /**
@@ -103,4 +135,33 @@ void lfa_holding_release(enum lfa_retc status)
 	activation_count = 0U;
 	activation_status = status;
 	spin_unlock(&holding_lock);
+}
+
+void lfa_load_relocatable(void)
+{
+	/*
+	 * The relocatable code area is outside of the normal BL31 image, so
+	 * before we can use it we have to make it writeable then copy the
+	 * relocatable code into it. Then once the copy is complete we must
+	 * mark it read only and executable again.
+	 */
+	xlat_change_mem_attributes(LFA_RELOCATABLE_CODE_START,
+				   (LFA_RELOCATABLE_DATA_START -LFA_RELOCATABLE_CODE_START),
+				   MT_MEMORY | MT_RW | MT_EXECUTE_NEVER | EL3_PAS);
+
+	memcpy((void *)LFA_RELOCATABLE_CODE_START, (void *)LFA_RELOCATABLE_LMA,
+	       (uintptr_t)(LFA_RELOCATABLE_DATA_START - LFA_RELOCATABLE_CODE_START));
+
+	xlat_change_mem_attributes(LFA_RELOCATABLE_CODE_START,
+				   (LFA_RELOCATABLE_DATA_START - LFA_RELOCATABLE_CODE_START),
+				   MT_MEMORY | MT_RO | MT_EXECUTE | EL3_PAS);
+
+	/*
+	 * The relocatable data section contains unknown information at this
+	 * point so zero it out before we use it.
+	 *
+	 * TODO do we actually need to do this?
+	 */
+	memset((void *)LFA_RELOCATABLE_DATA_START, 0,
+	       (LFA_RELOCATABLE_DATA_END - LFA_RELOCATABLE_DATA_START));
 }

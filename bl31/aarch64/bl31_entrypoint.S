@@ -16,6 +16,10 @@
 	.globl	bl31_entrypoint
 	.globl	bl31_warm_entrypoint
 
+#if LFA_SUPPORT
+	.globl	bl31_lfa_entrypoint
+#endif
+
 	/* -----------------------------------------------------
 	 * bl31_entrypoint() is the cold boot entrypoint,
 	 * executed only by the primary cpu.
@@ -191,3 +195,33 @@ func bl31_warm_entrypoint
 #endif
 	b	el3_exit
 endfunc bl31_warm_entrypoint
+
+#if LFA_SUPPORT
+	/*
+	 *---------------------------------------------------------------------
+	 * This CPU has been warm reset during a BL31 live firmware activation
+	 * --------------------------------------------------------------------
+	 */
+func bl31_lfa_entrypoint
+	/*
+	 * When a BL31 LFA update requests a warm reboot this is the entry
+	 * point used. We are trying to do as little as possible and just get
+	 * the new BL31 up and running as quickly as possible while restoring
+	 * the state of the system.
+	 */
+	el3_entrypoint_common					\
+		_init_sctlr=PROGRAMMABLE_RESET_ADDRESS		\
+		_warm_boot_mailbox=0				\
+		_secondary_cold_boot=0				\
+		_init_memory=0					\
+		_init_c_runtime=0				\
+		_exception_vectors=runtime_exceptions		\
+		_pie_fixup_size=0
+
+	/* Jump to C LFA warm reset entrypoint. */
+	bl	lfa_warm_reset_entrypoint
+
+	b	el3_exit
+endfunc bl31_lfa_entrypoint
+
+#endif /* LFA_SUPPORT */

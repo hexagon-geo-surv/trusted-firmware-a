@@ -641,6 +641,11 @@ $(eval $(call add_define,PLAT_TEST_SPM))
 
 ifeq (${LFA_SUPPORT},1)
 BL31_SOURCES            +=      plat/arm/board/fvp/fvp_lfa.c
+$(eval $(call add_define,LFA_FVP_BL31_IMAGE_SIZE))
+LFA_FVP_BL31_IMAGE_SIZE := 0
+ifeq (${LFA_FVP_BL31_IMAGE_SIZE},0)
+$(error You must provide LFA_FVP_BL31_IMAGE_SIZE)
+endif
 endif
 
 # This is set to 1 by default when the firmware update

@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <common/debug.h>
 #include <errno.h>
 #include <plat/common/platform.h>
 #include <services/bl31_lfa.h>
+#include <services/lfa_svc.h>
 #include <services/rmmd_rmm_lfa.h>
 #include <tools_share/firmware_image_package.h>
 
@@ -35,6 +37,7 @@ uint32_t plat_lfa_get_components(plat_lfa_component_info_t **components)
 	}
 
 	fvp_lfa_components[LFA_BL31_COMPONENT].activator = get_bl31_activator();
+
 #if ENABLE_RME
 	fvp_lfa_components[LFA_RMM_COMPONENT].activator = get_rmm_activator();
 #endif /* ENABLE_RME */
@@ -51,6 +54,10 @@ bool is_plat_lfa_activation_pending(uint32_t lfa_component_id)
 	}
 #endif /* ENABLE_RME */
 
+	if (lfa_component_id == LFA_BL31_COMPONENT) {
+		return true;
+	}
+
 	return false;
 }
 
@@ -62,15 +69,36 @@ int plat_lfa_cancel(uint32_t lfa_component_id)
 
 int plat_lfa_load_auth_image(uint32_t lfa_component_id)
 {
+	return 0;
+}
+
+
+int plat_lfa_get_image_info(uint32_t lfa_component_id, uintptr_t *image_address, size_t *image_size) {
 	/*
 	 * In AEM FVP, we don't want to bloat the code by adding
 	 * loading and authentication mechanism, so here we assumed
 	 * that the components are pre-loaded and authenticated already.
+	 *
+	 * The image is pre-loaded at 0xFB000000, with the first 8 bytes
+	 * containing the image size encoded as a uint64_t. The image itself
+	 * starts at 0xFB000008.
 	 */
-	return 0;
+	 if (lfa_component_id == LFA_BL31_COMPONENT) {
+		/* Update this to the current image size. */
+		*image_size = LFA_FVP_BL31_IMAGE_SIZE;
+		*image_address = (uintptr_t)(PLAT_LFA_STORE_BASE);
+		VERBOSE("FVP BL31 LFA image at 0x%lX with size %ld bytes\n", (uint64_t)*image_address, *image_size);
+		return 0;
+	}
+
+	return -EPERM;
 }
 
 int plat_lfa_notify_activate(uint32_t lfa_component_id)
 {
 	return 0;
+}
+
+uint64_t plat_lfa_mailbox_base(void) {
+	return PLAT_ARM_TRUSTED_MAILBOX_BASE;
 }
